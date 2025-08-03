@@ -1,26 +1,29 @@
 "use client"
-
 import type React from "react"
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Alert, Dimensions } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import { useNavigation } from "@react-navigation/native"
-import { AddMoneyScreenProps } from "../../../Types/navigation"
+import type { AddMoneyScreenProps } from "../../../Types/navigation"
+
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
 
 const AddMoneyScreen: React.FC = () => {
   const navigation = useNavigation<AddMoneyScreenProps["navigation"]>()
   const [amount, setAmount] = useState("")
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
-
   const moneyOptions = [50, 100, 200, 500]
 
   const handleAddMoney = () => {
     if (Number.parseFloat(amount) > 0) {
-      Alert.alert("Para Eklendi", `${amount} USD hesabınıza eklendi.`)
+      Alert.alert("Money Added", `${amount} USD has been added to your account.`)
       navigation.goBack()
     } else {
-      Alert.alert("Hata", "Lütfen geçerli bir miktar girin.")
+      Alert.alert("Error", "Please enter a valid amount.")
     }
   }
 
@@ -28,14 +31,13 @@ const AddMoneyScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Para Ekle</Text>
+        <Text style={styles.headerTitle}>Add Money</Text>
         <View style={styles.placeholder} />
       </View>
-
       <View style={styles.content}>
-        <Text style={styles.label}>Miktar Girin</Text>
+        <Text style={styles.label}>Enter Amount</Text>
         <TextInput
           style={styles.amountInput}
           keyboardType="numeric"
@@ -48,7 +50,6 @@ const AddMoneyScreen: React.FC = () => {
           }}
         />
         <Text style={styles.currency}>USD</Text>
-
         <View style={styles.optionsContainer}>
           {moneyOptions.map((option) => (
             <TouchableOpacity
@@ -65,15 +66,14 @@ const AddMoneyScreen: React.FC = () => {
             </TouchableOpacity>
           ))}
         </View>
-
         <TouchableOpacity style={styles.addButton} onPress={handleAddMoney}>
           <LinearGradient
-            colors={["#4CAF50", "#66BB6A"]}
+            colors={["#8B5CF6", "#6B46C1"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.addButtonGradient}
           >
-            <Text style={styles.addButtonText}>Para Ekle</Text>
+            <Text style={styles.addButtonText}>Add Money</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -84,74 +84,83 @@ const AddMoneyScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0A0A0A",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   backButton: {
-    padding: 5,
+    padding: responsiveWidth(1),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 24, // Back button ile aynı genişlikte boşluk
+    width: responsiveFontSize(24),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(3),
     alignItems: "center",
   },
   label: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#B0BEC5",
-    marginBottom: 10,
+    marginBottom: responsiveHeight(1.5),
   },
   amountInput: {
-    fontSize: 48,
+    fontSize: responsiveFontSize(48),
     fontWeight: "bold",
     color: "#FFFFFF",
     textAlign: "center",
     width: "100%",
-    marginBottom: 5,
+    marginBottom: responsiveHeight(0.5),
   },
   currency: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: "600",
     color: "#B0BEC5",
-    marginBottom: 30,
+    marginBottom: responsiveHeight(4),
   },
   optionsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    marginBottom: 40,
+    marginBottom: responsiveHeight(5),
   },
   optionButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    margin: 8,
-    minWidth: 120,
+    borderRadius: 12,
+    paddingVertical: responsiveHeight(1.8),
+    paddingHorizontal: responsiveWidth(5),
+    margin: responsiveWidth(2),
+    minWidth: responsiveWidth(30),
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   selectedOptionButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#8B5CF6",
+    shadowColor: "#8B5CF6",
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "600",
     color: "#FFFFFF",
   },
@@ -162,16 +171,21 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 15,
     overflow: "hidden",
-    marginTop: "auto", // Sayfanın altına hizala
-    marginBottom: 30,
+    marginTop: "auto",
+    marginBottom: responsiveHeight(4),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
   },
   addButtonGradient: {
-    paddingVertical: 18,
+    paddingVertical: responsiveHeight(2.5),
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: "bold",
     color: "#FFFFFF",
   },

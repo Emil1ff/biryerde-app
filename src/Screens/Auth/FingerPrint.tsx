@@ -165,7 +165,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
             },
             {
               text: "Skip",
-              onPress: () => navigation.navigate("MainTabs"), // Assuming 'MainTabs' is a valid route
+              onPress: () => navigation.navigate("Main"), 
               style: "cancel",
             },
           ],
@@ -182,7 +182,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
         },
         {
           text: "Skip",
-          onPress: () => navigation.navigate("MainTabs"), // Assuming 'MainTabs' is a valid route
+          onPress: () => navigation.navigate("MainTabs"), 
           style: "cancel",
         },
       ])
@@ -229,7 +229,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
           Alert.alert("Success", "Biometric authentication enabled.", [
             {
               text: "Continue",
-              onPress: () => navigation.navigate("MainTabs"), // Assuming 'MainTabs' is a valid route
+              onPress: () => navigation.navigate("MainTabs"), 
             },
           ])
         }, 1000)
@@ -246,7 +246,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
         { text: "Try Again", onPress: () => handleBiometricAuth() },
         {
           text: "Skip",
-          onPress: () => navigation.navigate("MainTabs"), // Assuming 'MainTabs' is a valid route
+          onPress: () => navigation.navigate("MainTabs"), 
           style: "cancel",
         },
       ])
@@ -285,14 +285,13 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
   const saveBiometricPreference = async (enabled: boolean) => {
     try {
       console.log("Biometric preference saved:", enabled)
-      // Here you would typically save this preference to AsyncStorage or a backend
     } catch (error) {
       console.error("Error saving biometric preference:", error)
     }
   }
 
   const handleSkip = () => {
-    navigation.navigate("MainTabs") // Assuming 'MainTabs' is a valid route
+    navigation.navigate("MainTabs") 
   }
 
   const handleBackPress = () => {
@@ -375,7 +374,6 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
             <ArrowLeftIcon size={24} color="#FFFFFF" />
@@ -383,15 +381,12 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
           <Text style={styles.title}>{getBiometricTitle()}</Text>
         </View>
 
-        {/* Description */}
         <View style={styles.descriptionContainer}>
           <Text style={styles.description}>{getBiometricDescription()}</Text>
         </View>
 
-        {/* Biometric Icon */}
         <View style={styles.iconContainer}>{renderBiometricIcon()}</View>
 
-        {/* Progress Text */}
         {isScanning && (
           <View style={styles.progressContainer}>
             <Text style={styles.progressText}>
@@ -399,7 +394,6 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
                 ? `Authenticating... ${scanProgress}%`
                 : "Biometric authentication set up successfully!"}
             </Text>
-            {/* Progress Bar */}
             <View style={styles.progressBarContainer}>
               <Animated.View
                 style={[
@@ -417,7 +411,6 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
         )}
         {!isScanning && scanProgress === 0 && <Text style={styles.instructionText}>{getInstructionText()}</Text>}
 
-        {/* Buttons */}
         <View style={styles.buttonsContainer}>
           {!isScanning && scanProgress === 0 && (
             <>

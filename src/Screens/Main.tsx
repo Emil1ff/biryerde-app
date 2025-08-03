@@ -1,7 +1,4 @@
-"use client"
-
-import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import {
   View,
   StyleSheet,
@@ -11,26 +8,28 @@ import {
   BackHandler,
   Platform,
   UIManager,
+  Text, 
 } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import PagerView from "react-native-pager-view"
-
 import Home from "./Main/Home"
 import Booking from "./Main/Booking"
-import Calendar from "./Main/Calendar"
 import Inbox from "./Main/Inbox"
+import Calendar from "./Main/Calendar"
+import EditProfile from "./Sub/Profile/EditProfile"
 import Profile from "./Main/Profile"
+
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
-
-const TAB_BAR_HEIGHT = 90 
-const COMPACT_ICON_SIZE = 60 
+const TAB_BAR_HEIGHT = 90
+const COMPACT_ICON_SIZE = 60
 const SCROLL_THRESHOLD = 10
+
 export type BottomTabParamList = {
   Home: undefined
   Bookings: undefined
@@ -47,106 +46,61 @@ interface TabIconProps {
 }
 
 const TabIcon: React.FC<TabIconProps> = ({ iconName, label, focused, onPress }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current
-  const opacityAnim = useRef(new Animated.Value(0.5)).current
   const indicatorOpacity = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    if (focused) {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1.2, 
-          friction: 4,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1, 
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorOpacity, {
-          toValue: 1, 
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    } else {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1, 
-          friction: 4,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.5, 
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorOpacity, {
-          toValue: 0, 
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    }
-  }, [focused, scaleAnim, opacityAnim, indicatorOpacity])
+    Animated.timing(indicatorOpacity, {
+      toValue: focused ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start()
+  }, [focused, indicatorOpacity])
 
-  const iconColor = focused ? "#FFFFFF" : "rgba(255, 255, 255, 0.7)" 
+  const iconColor = focused ? "#FFFFFF" : "rgba(255, 255, 255, 0.7)"
 
   return (
     <TouchableOpacity style={styles.tabButton} activeOpacity={0.7} onPress={onPress}>
-      <Animated.View
-        style={[
-          styles.tabIconWrapper, 
-          { transform: [{ scale: scaleAnim }] },
-        ]}
-      >
+      <View style={styles.tabIconWrapper}>
         {focused ? (
           <LinearGradient
-            colors={["#8B5CF6", "#A855F7", "#D946EF"]}
+            colors={["#ffffff2c", "#00000074", "#000000ff"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.activeTabIcon} 
+            style={styles.activeTabIcon}
           >
-            <Icon name={iconName} size={28} color="#FFFFFF" /> 
+            <Icon name={iconName} size={28} color="#FFFFFF" />
           </LinearGradient>
         ) : (
-          <Animated.View style={[styles.inactiveTabIcon, { opacity: opacityAnim }]}>
-            <Icon name={iconName} size={26} color={iconColor} /> 
-          </Animated.View>
+          <View style={styles.inactiveTabIcon}>
+            <Icon name={iconName} size={26} color={iconColor} />
+          </View>
         )}
-      </Animated.View>
-
-      <Animated.Text
+      </View>
+      <Text
         style={[
           styles.tabLabel,
           focused ? styles.activeTabLabel : styles.inactiveTabLabel,
-          { opacity: focused ? 1 : 0.7 }, 
+          { opacity: focused ? 1 : 0.7 },
         ]}
       >
         {label}
-      </Animated.Text>
-
+      </Text>
       <Animated.View style={[styles.tabIndicator, { opacity: indicatorOpacity }]} />
     </TouchableOpacity>
   )
 }
 
 interface TabBarProps {
-  state: any
-  descriptors: any
-  navigation: any
+  routes: { key: string; title: string; component: React.ComponentType<any> }[]
   activeTabIndex: number
   onTabPress: (index: number) => void
-  tabBarTranslateY: Animated.Value 
-  tabBarScale: Animated.Value 
-  tabBarOpacity: Animated.Value 
+  tabBarTranslateY: Animated.Value
+  tabBarScale: Animated.Value
+  tabBarOpacity: Animated.Value
 }
 
 const TabBar: React.FC<TabBarProps> = ({
-  state,
-  descriptors,
-  navigation,
+  routes,
   activeTabIndex,
   onTabPress,
   tabBarTranslateY,
@@ -164,14 +118,14 @@ const TabBar: React.FC<TabBarProps> = ({
       ]}
     >
       <LinearGradient colors={["rgba(15, 15, 20, 0.9)", "#272727b2"]} style={styles.tabBarGradient}>
-        {state.routes.map((route: any, index: number) => {
-          const label = route.name
+        {routes.map((route: any, index: number) => {
+          const label = route.title 
           const isFocused = activeTabIndex === index
           const onPress = () => {
             onTabPress(index)
           }
           let iconName = ""
-          switch (route.name) {
+          switch (route.key) {
             case "Home":
               iconName = "home"
               break
@@ -198,14 +152,14 @@ const TabBar: React.FC<TabBarProps> = ({
 const Main: React.FC = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0)
   const pagerRef = useRef<PagerView>(null)
-  const tabBarTranslateY = useRef(new Animated.Value(0)).current // For bottom bar animation
-  const tabBarScale = useRef(new Animated.Value(1)).current // New: Bottom bar scaling
-  const tabBarOpacity = useRef(new Animated.Value(1)).current // New: Bottom bar opacity
-  const compactIconTranslateX = useRef(new Animated.Value(-COMPACT_ICON_SIZE - 20)).current // New: Compact icon's starting position (off-screen)
-  const compactIconOpacity = useRef(new Animated.Value(0)).current // New: Compact icon's opacity
+  const tabBarTranslateY = useRef(new Animated.Value(0)).current 
+  const tabBarScale = useRef(new Animated.Value(1)).current 
+  const tabBarOpacity = useRef(new Animated.Value(1)).current 
+  const compactIconTranslateX = useRef(new Animated.Value(-COMPACT_ICON_SIZE - 20)).current 
+  const compactIconOpacity = useRef(new Animated.Value(0)).current 
   const lastScrollY = useRef(0)
-  const isTabBarVisible = useRef(true) // Tracks if the bottom bar is fully visible
-  const [isCompactMode, setIsCompactMode] = useState(false) // New: Tracks if in compact mode
+  const isTabBarVisible = useRef(true) 
+  const [isCompactMode, setIsCompactMode] = useState(false) 
 
   useEffect(() => {
     if (pagerRef.current && pagerRef.current.setPage) {
@@ -222,9 +176,7 @@ const Main: React.FC = () => {
       }
       return false // Allow default back button behavior
     }
-
     const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction)
-
     return () => backHandler.remove()
   }, [isCompactMode])
 
@@ -248,30 +200,29 @@ const Main: React.FC = () => {
 
   const animateTabBar = (mode: "compact" | "expand") => {
     if (mode === "compact" && !isCompactMode) {
-      // Transition to compact mode
       Animated.parallel([
         Animated.timing(tabBarTranslateY, {
-          toValue: TAB_BAR_HEIGHT, // Slide off-screen
+          toValue: TAB_BAR_HEIGHT, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(tabBarScale, {
-          toValue: 0.8, // Shrink slightly
+          toValue: 0.8, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(tabBarOpacity, {
-          toValue: 0, // Make fully transparent
+          toValue: 0,
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(compactIconTranslateX, {
-          toValue: 20, // Bring into view
+          toValue: 20, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(compactIconOpacity, {
-          toValue: 1, // Make visible
+          toValue: 1, 
           duration: 200,
           useNativeDriver: true,
         }),
@@ -280,30 +231,29 @@ const Main: React.FC = () => {
         isTabBarVisible.current = false
       })
     } else if (mode === "expand" && isCompactMode) {
-      // Transition to expanded mode
       Animated.parallel([
         Animated.timing(tabBarTranslateY, {
-          toValue: 0, // Slide into view
+          toValue: 0, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(tabBarScale, {
-          toValue: 1, // Return to original size
+          toValue: 1, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(tabBarOpacity, {
-          toValue: 1, // Make fully opaque
+          toValue: 1,
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(compactIconTranslateX, {
-          toValue: -COMPACT_ICON_SIZE - 20, // Slide off-screen
+          toValue: -COMPACT_ICON_SIZE - 20, 
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(compactIconOpacity, {
-          toValue: 0, // Make transparent
+          toValue: 0,
           duration: 200,
           useNativeDriver: true,
         }),
@@ -317,7 +267,7 @@ const Main: React.FC = () => {
   const handleTabPress = (index: number) => {
     setActiveTabIndex(index)
     if (isCompactMode) {
-      animateTabBar("expand") // Expand when a tab is pressed in compact mode
+      animateTabBar("expand") 
     }
   }
 
@@ -325,16 +275,12 @@ const Main: React.FC = () => {
     setActiveTabIndex(e.nativeEvent.position)
   }
 
-  // Function to handle scroll events
   const handleScroll = (event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y
     const scrollDiff = currentScrollY - lastScrollY.current
-
     if (scrollDiff > SCROLL_THRESHOLD && isTabBarVisible.current) {
-      // Scrolling down and bar is visible, switch to compact mode
       animateTabBar("compact")
     } else if (scrollDiff < -SCROLL_THRESHOLD && !isTabBarVisible.current) {
-      // Scrolling up and bar is in compact mode, expand
       animateTabBar("expand")
     }
     lastScrollY.current = currentScrollY
@@ -355,29 +301,22 @@ const Main: React.FC = () => {
         style={styles.pagerView}
         initialPage={activeTabIndex}
         onPageSelected={handlePageSelected}
-        scrollEnabled={true} // Enable swiping
+        scrollEnabled={true} 
       >
         {routes.map((route) => (
           <View key={route.key} style={{ flex: 1 }}>
-            {/* Pass onScroll prop to each screen component */}
             <route.component onScroll={handleScroll} />
           </View>
         ))}
       </PagerView>
-
-      {/* Custom TabBar */}
       <TabBar
-        state={{ index: activeTabIndex, routes: routes }}
-        descriptors={{}}
-        navigation={{}}
+        routes={routes}
         activeTabIndex={activeTabIndex}
         onTabPress={handleTabPress}
-        tabBarTranslateY={tabBarTranslateY} // Pass animated value to TabBar
-        tabBarScale={tabBarScale} // New: Scale value
-        tabBarOpacity={tabBarOpacity} // New: Opacity value
+        tabBarTranslateY={tabBarTranslateY} 
+        tabBarScale={tabBarScale} 
+        tabBarOpacity={tabBarOpacity} 
       />
-
-      {/* Compact Icon (Dynamic Island-like) */}
       <Animated.View
         style={[
           styles.compactIconContainer,
@@ -390,7 +329,7 @@ const Main: React.FC = () => {
         <TouchableOpacity
           style={styles.compactIconButton}
           activeOpacity={0.7}
-          onPress={() => animateTabBar("expand")} // Expand when clicked
+          onPress={() => animateTabBar("expand")} 
         >
           <LinearGradient
             colors={["#8B5CF6", "#A855F7", "#D946EF"]}
@@ -398,7 +337,7 @@ const Main: React.FC = () => {
             end={{ x: 1, y: 1 }}
             style={styles.compactIconGradient}
           >
-            <Icon name={getIconNameForIndex(activeTabIndex)} size={28} color="#FFFFFF" /> 
+            <Icon name={getIconNameForIndex(activeTabIndex)} size={28} color="#FFFFFF" />
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -414,28 +353,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     height: TAB_BAR_HEIGHT,
     paddingBottom: 20,
-    borderTopLeftRadius: 30, // Radius increased
-    borderTopRightRadius: 30, // Radius increased
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -6, // More prominent shadow
-    },
-    shadowOpacity: 0.3, // Shadow opacity increased
-    shadowRadius: 8, // Shadow radius increased
-    elevation: 15, // Shadow for Android
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
     position: "absolute",
-    bottom: 0,
+    bottom: 20,
     left: 0,
     right: 0,
-    // Background will be provided by LinearGradient, only overflow here
-    overflow: "hidden", // Prevent content overflow
+    
+    overflow: "hidden",
   },
   tabBarGradient: {
     flexDirection: "row",
     height: "100%",
     width: "100%",
-    // Radii are applied to the container, not the gradient directly if overflow is hidden
   },
   tabButton: {
     flex: 1,
@@ -449,29 +379,29 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   activeTabIcon: {
-    width: 60, // Size increased
-    height: 60, // Size increased
-    borderRadius: 30, // Proportional to size
+    width: 60, 
+    height: 60, 
+    borderRadius: 30, 
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#8B5CF6",
     shadowOffset: {
       width: 0,
-      height: 6, // More prominent shadow
+      height: 6, 
     },
-    shadowOpacity: 0.6, // Shadow opacity increased
-    shadowRadius: 12, // Shadow radius increased
+    shadowOpacity: 0.6, 
+    shadowRadius: 12, 
     elevation: 10,
   },
   inactiveTabIcon: {
-    width: 54, // Size increased
-    height: 54, // Size increased
-    borderRadius: 27, // Proportional to size
+    width: 54, 
+    height: 54, 
+    borderRadius: 27, 
     justifyContent: "center",
     alignItems: "center",
   },
   tabLabel: {
-    fontSize: 13, // Font size increased
+    fontSize: 13, 
     fontWeight: "600",
     marginTop: 2,
   },
@@ -483,21 +413,21 @@ const styles = StyleSheet.create({
   },
   tabIndicator: {
     position: "absolute",
-    height: 4, // Height increased
-    width: 20, // Width increased
+    height: 4,
+    width: 20, 
     backgroundColor: "#D946EF",
     bottom: -5,
     borderRadius: 8,
   },
   compactIconContainer: {
     position: "absolute",
-    bottom: 30, // Slightly above the bottom bar
+    bottom: 30, 
     left: 0,
-    width: COMPACT_ICON_SIZE + 30, // Width for icon and spacing
-    height: COMPACT_ICON_SIZE + 10, // Height for icon and spacing
+    width: COMPACT_ICON_SIZE + 30,
+    height: COMPACT_ICON_SIZE + 10, 
     justifyContent: "center",
     alignItems: "flex-start",
-    paddingLeft: 15, // Left padding
+    paddingLeft: 15, 
   },
   compactIconButton: {
     width: COMPACT_ICON_SIZE,

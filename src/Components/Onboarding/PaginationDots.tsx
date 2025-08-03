@@ -1,35 +1,26 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import type React from "react"
+import { View, StyleSheet } from "react-native"
 
 interface PaginationDotsProps {
-  currentIndex: number;
-  totalDots: number;
+  currentIndex: number
+  totalDots: number
 }
 
-const PaginationDots: React.FC<PaginationDotsProps> = ({ 
-  currentIndex, 
-  totalDots 
-}) => {
+const PaginationDots: React.FC<PaginationDotsProps> = ({ currentIndex, totalDots }) => {
   return (
     <View style={styles.container}>
       {[...Array(totalDots)].map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.dot,
-            index === currentIndex ? styles.activeDot : styles.inactiveDot,
-          ]}
-        />
+        <View key={index} style={[styles.dot, index === currentIndex ? styles.activeDot : styles.inactiveDot]} />
       ))}
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 20,
   },
   dot: {
@@ -39,13 +30,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeDot: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
     width: 24,
     borderRadius: 12,
   },
   inactiveDot: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
-});
+})
 
-export default PaginationDots;
+export default PaginationDots

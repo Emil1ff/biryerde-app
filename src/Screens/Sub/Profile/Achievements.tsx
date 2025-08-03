@@ -1,12 +1,16 @@
 "use client"
-
 import type React from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList, Dimensions, ScrollView } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
 import { useNavigation } from "@react-navigation/native"
-import { AchievementsScreenProps } from "../../../Types/navigation"
+import type { AchievementsScreenProps } from "../../../Types/navigation"
+
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
 
 interface Achievement {
   id: string
@@ -15,23 +19,23 @@ interface Achievement {
   icon: string
   color: string
   unlocked: boolean
-  progress?: number // For achievements with progress
-  target?: number // For achievements with progress
+  progress?: number
+  target?: number
 }
 
 const achievements: Achievement[] = [
   {
     id: "a1",
-    name: "İlk Rezervasyon",
-    description: "İlk hizmet rezervasyonunuzu tamamlayın.",
+    name: "First Booking",
+    description: "Complete your first service booking.",
     icon: "star-outline",
     color: "#FFC107",
     unlocked: true,
   },
   {
     id: "a2",
-    name: "Sadık Müşteri",
-    description: "10 hizmet rezervasyonu tamamlayın.",
+    name: "Loyal Customer",
+    description: "Complete 10 service bookings.",
     icon: "heart-outline",
     color: "#FF6347",
     unlocked: false,
@@ -40,24 +44,24 @@ const achievements: Achievement[] = [
   },
   {
     id: "a3",
-    name: "Uzman Kullanıcı",
-    description: "Tüm hizmet kategorilerinden en az birer rezervasyon yapın.",
+    name: "Expert User",
+    description: "Make at least one booking from all service categories.",
     icon: "trophy-outline",
     color: "#4CAF50",
     unlocked: false,
   },
   {
     id: "a4",
-    name: "Sosyal Kelebek",
-    description: "5 arkadaşınızı uygulamaya davet edin.",
+    name: "Social Butterfly",
+    description: "Invite 5 friends to the app.",
     icon: "people-outline",
     color: "#00BCD4",
     unlocked: true,
   },
   {
     id: "a5",
-    name: "Yorum Canavarı",
-    description: "5 hizmete yorum yapın.",
+    name: "Review Master",
+    description: "Leave reviews for 5 services.",
     icon: "chatbubbles-outline",
     color: "#8B5CF6",
     unlocked: false,
@@ -66,8 +70,8 @@ const achievements: Achievement[] = [
   },
   {
     id: "a6",
-    name: "Gece Kuşu",
-    description: "Gece 22:00'den sonra 3 rezervasyon yapın.",
+    name: "Night Owl",
+    description: "Make 3 bookings after 10:00 PM.",
     icon: "moon-outline",
     color: "#607D8B",
     unlocked: false,
@@ -78,15 +82,15 @@ const AchievementItem: React.FC<{ item: Achievement }> = ({ item }) => {
   return (
     <View style={styles.achievementItem}>
       <LinearGradient
-        colors={item.unlocked ? [item.color, "#212121"] : ["#212121", "#121212"]}
+        colors={["#2A2A2A", "#1A1A1A"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.achievementIconContainer}
       >
         <MaterialCommunityIcons
           name={item.icon}
-          size={36}
-          color={item.unlocked ? "#FFFFFF" : "rgba(255, 255, 255, 0.4)"}
+          size={responsiveFontSize(36)}
+          color={item.unlocked ? item.color : "rgba(255, 255, 255, 0.4)"}
         />
       </LinearGradient>
       <View style={styles.achievementDetails}>
@@ -97,7 +101,7 @@ const AchievementItem: React.FC<{ item: Achievement }> = ({ item }) => {
             <View
               style={[
                 styles.progressBarFill,
-                { width: `${(item.progress / item.target) * 100}%`, backgroundColor: item.color },
+                { width: `${(item.progress / item.target) * 100}%`, backgroundColor: "#8B5CF6" },
               ]}
             />
             <Text style={styles.progressText}>
@@ -107,7 +111,12 @@ const AchievementItem: React.FC<{ item: Achievement }> = ({ item }) => {
         )}
       </View>
       {item.unlocked && (
-        <MaterialCommunityIcons name="check-circle" size={24} color="#4CAF50" style={styles.unlockedBadge} />
+        <MaterialCommunityIcons
+          name="check-circle"
+          size={responsiveFontSize(24)}
+          color="#6BFF6B"
+          style={styles.unlockedBadge}
+        />
       )}
     </View>
   )
@@ -115,55 +124,63 @@ const AchievementItem: React.FC<{ item: Achievement }> = ({ item }) => {
 
 const AchievementsScreen: React.FC = () => {
   const navigation = useNavigation<AchievementsScreenProps["navigation"]>()
-
   const unlockedAchievements = achievements.filter((a) => a.unlocked)
   const lockedAchievements = achievements.filter((a) => !a.unlocked)
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Başarılarım</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      <FlatList
-        data={unlockedAchievements}
-        renderItem={({ item }) => <AchievementItem item={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.achievementsList}
-        ListHeaderComponent={() => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Kilidi Açılan Başarılar ({unlockedAchievements.length})</Text>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="trophy-off" size={80} color="rgba(255, 255, 255, 0.2)" />
-            <Text style={styles.emptyStateText}>Henüz kilidi açılan bir başarınız yok.</Text>
-          </View>
-        )}
-      />
-
-      <FlatList
-        data={lockedAchievements}
-        renderItem={({ item }) => <AchievementItem item={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.achievementsList}
-        ListHeaderComponent={() => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Kilitli Başarılar ({lockedAchievements.length})</Text>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="lock-open-outline" size={80} color="rgba(255, 255, 255, 0.2)" />
-            <Text style={styles.emptyStateText}>Tüm başarıların kilidini açtınız!</Text>
-          </View>
-        )}
-      />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Achievements</Text>
+          <View style={styles.placeholder} />
+        </View>
+      <ScrollView style={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
+        <FlatList
+          data={unlockedAchievements}
+          renderItem={({ item }) => <AchievementItem item={item} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.achievementsList}
+          scrollEnabled={false}
+          ListHeaderComponent={() => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Unlocked Achievements ({unlockedAchievements.length})</Text>
+            </View>
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons
+                name="trophy-off"
+                size={responsiveFontSize(80)}
+                color="rgba(255, 255, 255, 0.2)"
+              />
+              <Text style={styles.emptyStateText}>You haven't unlocked any achievements yet.</Text>
+            </View>
+          )}
+        />
+        <FlatList
+          data={lockedAchievements}
+          renderItem={({ item }) => <AchievementItem item={item} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.achievementsList}
+          scrollEnabled={false}
+          ListHeaderComponent={() => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Locked Achievements ({lockedAchievements.length})</Text>
+            </View>
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons
+                name="lock-open-outline"
+                size={responsiveFontSize(80)}
+                color="rgba(255, 255, 255, 0.2)"
+              />
+              <Text style={styles.emptyStateText}>You have unlocked all achievements!</Text>
+            </View>
+          )}
+        />
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -171,63 +188,66 @@ const AchievementsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0A0A0A",
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
+    // Removed borderBottomWidth and borderBottomColor to allow full scroll
   },
   backButton: {
-    padding: 5,
+    padding: responsiveWidth(1),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 24,
+    width: responsiveFontSize(24),
   },
   sectionHeader: {
-    paddingHorizontal: 20,
-    marginTop: 30,
-    marginBottom: 15,
+    paddingHorizontal: responsiveWidth(5),
+    marginTop: responsiveHeight(4),
+    marginBottom: responsiveHeight(2),
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(22),
+    fontWeight: "700",
     color: "#FFFFFF",
   },
   achievementsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingBottom: responsiveHeight(2.5),
   },
   achievementItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#212121",
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
+    paddingVertical: responsiveHeight(2),
+    paddingHorizontal: responsiveWidth(4),
+    marginBottom: responsiveHeight(1.5),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 5,
   },
   achievementIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: responsiveFontSize(60),
+    height: responsiveFontSize(60),
+    borderRadius: responsiveFontSize(30),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: responsiveWidth(4),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -238,59 +258,58 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   achievementName: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(17),
+    fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   achievementDescription: {
-    fontSize: 13,
-    color: "#B0BEC5",
-    marginBottom: 8,
+    fontSize: responsiveFontSize(13),
+    color: "#9CA3AF",
+    marginBottom: responsiveHeight(1),
   },
   lockedText: {
     opacity: 0.6,
   },
   progressBarBackground: {
     width: "100%",
-    height: 8,
+    height: responsiveHeight(1),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 4,
+    borderRadius: responsiveHeight(0.5),
     position: "relative",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: responsiveHeight(0.5),
   },
   progressText: {
     position: "absolute",
-    right: 5,
-    top: -2,
-    fontSize: 10,
+    right: responsiveWidth(1.5),
+    top: -responsiveHeight(0.5),
+    fontSize: responsiveFontSize(10),
     color: "#FFFFFF",
     fontWeight: "bold",
   },
   unlockedBadge: {
-    marginLeft: 10,
+    marginLeft: responsiveWidth(2.5),
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: 40,
-    backgroundColor: "#212121",
+    paddingVertical: responsiveHeight(5),
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
-    marginHorizontal: 0,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 5,
-    marginBottom: 20,
+    marginBottom: responsiveHeight(2.5),
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
-    marginTop: 15,
+    marginTop: responsiveHeight(2),
   },
 })
 

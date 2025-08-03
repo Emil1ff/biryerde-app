@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs"
 import type { NavigatorScreenParams, CompositeScreenProps } from "@react-navigation/native"
+import type { LatLng } from "react-native-maps" // Import LatLng
 
 export type BottomTabParamList = {
   Home: undefined
@@ -19,7 +20,7 @@ export type RootStackParamList = {
   FillProfile: undefined
   CreatePIN: undefined
   SetFingerprint: undefined
-  Main: NavigatorScreenParams<BottomTabParamList> 
+  Main: NavigatorScreenParams<BottomTabParamList>
   Search: { query?: string }
   Bookmark: undefined
   SpecialOffers: undefined
@@ -35,15 +36,15 @@ export type RootStackParamList = {
   AddPaymentMethod: undefined
   AllTransactions: undefined
   AddMoney: undefined
-  EnterPIN: undefined 
-  AddBooking: undefined 
-  AllBookings: undefined 
-  BookingDetails: { bookingId: string } 
+  EnterPIN: undefined
+  AddBooking: undefined
+  AllBookings: undefined
+  BookingDetails: { bookingId: string }
   AddPromo: { onSelectPromo: (promo: any) => void }
   AddressLocation: {
     serviceId: string
     categoryId: string
-    selectedItems: { [key: string]: number }
+    selectedItems: any[] // Changed to any[] for flexibility
     totalPrice: number
     selectedDate: string | null
     selectedTime: string | null
@@ -53,7 +54,7 @@ export type RootStackParamList = {
   PaymentMethods: {
     serviceId: string
     categoryId: string
-    selectedItems: { [key: string]: number }
+    selectedItems: any[] // Changed to any[] for flexibility
     totalPrice: number
     selectedDate: string | null
     selectedTime: string | null
@@ -61,6 +62,7 @@ export type RootStackParamList = {
     appliedPromo: any
     address: string
     locationDetails: string
+    selectedLocation: LatLng // Added missing parameter
   }
   ReviewSummary: {
     serviceId: string
@@ -166,7 +168,7 @@ export type CustomerServiceChatScreenProps = NativeStackScreenProps<RootStackPar
 export type CallScreenProps = NativeStackScreenProps<RootStackParamList, "CallScreen">
 export type ChatScreenProps = NativeStackScreenProps<RootStackParamList, "Chat">
 export type ForgotPasswordProps = NativeStackScreenProps<RootStackParamList, "ForgotPassword">
-export type ChatDetailScreenProps = NativeStackScreenProps<RootStackParamList, "ChatDetail"> 
+export type ChatDetailScreenProps = NativeStackScreenProps<RootStackParamList, "ChatDetail">
 export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, "Search">
 export type WalletScreenProps = NativeStackScreenProps<RootStackParamList, "Wallet">
 export type RewardsScreenProps = NativeStackScreenProps<RootStackParamList, "Rewards">
@@ -176,34 +178,28 @@ export type AddMoneyScreenProps = NativeStackScreenProps<RootStackParamList, "Ad
 export type AddPaymentMethodScreenProps = NativeStackScreenProps<RootStackParamList, "AddPaymentMethod">
 export type AllTransactionsScreenProps = NativeStackScreenProps<RootStackParamList, "AllTransactions">
 export type AddBookingScreenProps = NativeStackScreenProps<RootStackParamList, "AddBooking">
-export type AllBookingsScreenProps = NativeStackScreenProps<RootStackParamList, "AllBookings"> 
-
+export type AllBookingsScreenProps = NativeStackScreenProps<RootStackParamList, "AllBookings">
 export type HomeScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Home">
 export type BookingsScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Bookings">
 export type CalendarScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Calendar">
 export type InboxScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Inbox">
 export type ProfileScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Profile">
-
 export type HomeScreenPropsWithScroll = CompositeScreenProps<
   HomeScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>
 > & { onScroll: (event: any) => void }
-
 export type BookingsScreenPropsWithScroll = CompositeScreenProps<
   BookingsScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>
 > & { onScroll: (event: any) => void }
-
 export type CalendarScreenPropsWithScroll = CompositeScreenProps<
   CalendarScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>
 > & { onScroll: (event: any) => void }
-
 export type InboxScreenPropsWithScroll = CompositeScreenProps<
   InboxScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>
 > & { onScroll: (event: any) => void }
-
 export type ProfileScreenPropsWithScroll = CompositeScreenProps<
   ProfileScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>

@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState, useRef } from "react"
 import {
@@ -12,7 +11,7 @@ import {
   TextInput,
   FlatList,
   Dimensions,
-  Animated, // Animated import edildi
+  Animated,
 } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
@@ -53,15 +52,19 @@ interface OfferItem {
 }
 
 interface HomeProps {
-  onScroll: (event: any) => void // onScroll prop'u eklendi
+  onScroll: (event: any) => void
 }
+
+const numColumns = 4 // Xidmət gridi üçün sütun sayı
+const INITIAL_DISPLAY_COUNT = 7 // Başlanğıcda göstəriləcək xidmətlərin sayı
+const MORE_BUTTON_ID = "more-button" // "More" düyməsi üçün unikal ID
 
 const Home: React.FC<HomeProps> = ({ onScroll }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>()
   const [searchQuery, setSearchQuery] = useState("")
   const [currentOfferIndex, setCurrentOfferIndex] = useState(0)
-  const [showAllServices, setShowAllServices] = useState(false)
-  const [activeServiceTab, setActiveServiceTab] = useState("All")
+  const [displayedServiceCount, setDisplayedServiceCount] = useState(INITIAL_DISPLAY_COUNT) // Göstərilən xidmətlərin sayı
+
   const carouselRef = useRef<FlatList>(null)
 
   const offers: OfferItem[] = [
@@ -103,7 +106,7 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
     },
   ]
 
-  const allServices: Service[] = [
+  const baseServices: Service[] = [
     { id: "1", name: "Cleaning", icon: "home-outline", color: "#8B5CF6", iconFamily: "Ionicons" },
     { id: "2", name: "Repairing", icon: "build-outline", color: "#F59E0B", iconFamily: "Ionicons" },
     { id: "3", name: "Painting", icon: "brush-outline", color: "#3B82F6", iconFamily: "Ionicons" },
@@ -115,10 +118,19 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
     { id: "9", name: "Electrical", icon: "flash-outline", color: "#FBBF24", iconFamily: "Ionicons" },
     { id: "10", name: "Carpentry", icon: "hammer-outline", color: "#8B4513", iconFamily: "Ionicons" },
     { id: "11", name: "Beauty", icon: "cut-outline", color: "#EC4899", iconFamily: "Ionicons" },
-    { id: "12", name: "More", icon: "ellipsis-horizontal", color: "#8B5CF6", iconFamily: "Ionicons" },
   ]
 
-  const services = showAllServices ? allServices : allServices.slice(0, 8)
+  // Göstəriləcək xidmətlər siyahısını dinamik olaraq hazırlayın
+  const services = baseServices.slice(0, displayedServiceCount)
+  if (displayedServiceCount < baseServices.length) {
+    services.push({
+      id: MORE_BUTTON_ID,
+      name: "More",
+      icon: "ellipsis-horizontal",
+      color: "#8B5CF6", // Bənövşəyi tema
+      iconFamily: "Ionicons",
+    })
+  }
 
   const allPopularServices: PopularService[] = [
     {
@@ -194,13 +206,17 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
     navigation.navigate("Search", { query: searchQuery })
   }
 
-  const handleServicePress = (service: Service) => {
-    if (service.name === "More") {
-      setShowAllServices(!showAllServices)
+  const handleServicePress = (item: Service) => {
+    if (item.id === MORE_BUTTON_ID) {
+      // "More" düyməsinə basıldıqda xidmətlərin sayını artır
+      setDisplayedServiceCount((prevCount) => {
+        const newCount = prevCount + numColumns // Bir sıra (4 ədəd) artır
+        return Math.min(newCount, baseServices.length) // Ümumi xidmətlərin sayını keçməsin
+      })
     } else {
-      // Assuming a generic navigation to ServiceDetail for other services
-      // You might need to adjust this based on your actual navigation structure and data
-      navigation.navigate("ServiceDetail", { serviceId: service.id, categoryId: service.name })
+      // Digər xidmətlərə basıldıqda ServiceListByCategory ekranına yönləndir
+      // AllServicesScreen-dəki kimi categoryId və categoryName ötürülür
+      navigation.navigate("ServiceListByCategory", { categoryId: item.id, categoryName: item.name })
     }
   }
 
@@ -287,6 +303,7 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
   )
 
   const serviceCategories = ["All", "Cleaning", "Repairing", "Painting"]
+  const [activeServiceTab, setActiveServiceTab] = useState("All")
 
   return (
     <SafeAreaView style={styles.container}>
@@ -295,7 +312,7 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
         showsVerticalScrollIndicator={false}
         onScroll={onScroll} // Pass onScroll prop
         scrollEventThrottle={16} // Important for smooth animation
-        contentContainerStyle={{ paddingBottom: 100 }} // Alt çubuk için boşluk
+        contentContainerStyle={{ paddingBottom: 100 }} // Alt çubuk üçün boşluq
       >
         <View style={styles.header}>
           <View style={styles.userInfo}>
@@ -370,10 +387,10 @@ const Home: React.FC<HomeProps> = ({ onScroll }) => {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={services}
+            data={services} // Yenilənmiş xidmətlər siyahısı
             renderItem={renderServiceItem}
             keyExtractor={(item) => item.id}
-            numColumns={4}
+            numColumns={numColumns}
             scrollEnabled={false}
             contentContainerStyle={styles.servicesGrid}
           />

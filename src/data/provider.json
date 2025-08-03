@@ -1,0 +1,74 @@
+{
+  "providers": [
+    {
+      "id": "provider1",
+      "name": "Jenny Wilson",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-jenny.jpeg",
+      "location": "New York, NY",
+      "vipStatus": true,
+      "rating": 4.8,
+      "reviewsCount": 8289,
+      "servicesOffered": ["house-cleaning", "bathroom-cleaning"]
+    },
+    {
+      "id": "provider2",
+      "name": "Robert Fox",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-robert.jpeg",
+      "location": "Brooklyn, NY",
+      "vipStatus": false,
+      "rating": 4.9,
+      "reviewsCount": 6182,
+      "servicesOffered": ["floor-cleaning"]
+    },
+    {
+      "id": "provider3",
+      "name": "Kristin Watson",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-kristin.jpeg",
+      "location": "Manhattan, NY",
+      "vipStatus": true,
+      "rating": 4.7,
+      "reviewsCount": 7938,
+      "servicesOffered": ["washing-clothes"]
+    },
+    {
+      "id": "provider4",
+      "name": "Chantel Chadwick",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-chantel.jpeg",
+      "location": "Queens, NY",
+      "vipStatus": false,
+      "rating": 4.7,
+      "reviewsCount": 1386,
+      "servicesOffered": ["plumbing-repairing"]
+    },
+    {
+      "id": "provider5",
+      "name": "Kenny Spenceman",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-kenny.jpeg",
+      "location": "Bronx, NY",
+      "vipStatus": false,
+      "rating": 4.5,
+      "reviewsCount": 1100,
+      "servicesOffered": ["appliance-services"]
+    },
+    {
+      "id": "provider6",
+      "name": "Marygold Medley",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-marygold.jpeg",
+      "location": "Staten Island, NY",
+      "vipStatus": true,
+      "rating": 4.9,
+      "reviewsCount": 2100,
+      "servicesOffered": ["kitchen-cleaning"]
+    },
+    {
+      "id": "provider7",
+      "name": "Alfonso Schumacher",
+      "image": "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/provider-alfonso.jpeg",
+      "location": "Long Island, NY",
+      "vipStatus": false,
+      "rating": 4.6,
+      "reviewsCount": 980,
+      "servicesOffered": ["painting-walls"]
+    }
+  ]
+}

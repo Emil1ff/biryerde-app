@@ -1,5 +1,5 @@
 import type React from "react"
-import { Search, MoreHorizontal, Calendar, Clock, MapPin } from "lucide-react-native"
+import { TouchableOpacity , Search, MoreHorizontal, Calendar, Clock, MapPin } from "lucide-react-native"
 
 interface IconProps {
   size?: number

@@ -1,12 +1,28 @@
 "use client"
+
 import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import type { StackNavigationProp } from "@react-navigation/stack"
 import type React from "react"
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Switch, Alert, Animated } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Switch, Animated } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
-import { RootStackParamList } from "../../Types/navigation"
+import CustomAlert from "../../Components/CustomAlert"
+type RootStackParamList = {
+  Auth: undefined
+  EditProfile: undefined
+  NotificationSettings: undefined
+  Payment: undefined
+  Security: undefined
+  Language: undefined
+  PrivacyPolicy: undefined
+  HelpCenterFAQ: undefined
+  InviteFriends: undefined
+  Wallet: undefined
+  Rewards: undefined
+  Achievements: undefined
+  Analytics: undefined
+}
 
 interface ProfileOption {
   id: string
@@ -19,42 +35,36 @@ interface ProfileOption {
 }
 
 interface ProfilePropsWithScroll {
-  onScroll: (event: any) => void 
+  onScroll: (event: any) => void
 }
 
 const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>() 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>()
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [darkModeEnabled, setDarkModeEnabled] = useState(true)
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false) 
 
   const userInfo = {
     name: "Andrew Ainsley",
     email: "andrew_ainsley@yourdomain.com",
-    profileImage:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg",
+    profileImage: "/public/images/profile-image.png", 
     memberSince: "December 2023",
     completedBookings: 24,
     rating: 4.8,
   }
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => {
-          console.log("User logged out")
-          navigation.reset({ // navigation prop'u kaldırıldığı için yorum satırı yapıldı
-            index: 0,
-            routes: [{ name: 'Auth' }],
-          });
-        },
-      },
-    ])
+    setShowLogoutAlert(true)
+  }
+
+  const confirmLogout = () => {
+    console.log("User logged out")
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Auth" }],
+    })
+    setShowLogoutAlert(false) 
   }
 
   const profileOptions: ProfileOption[] = [
@@ -63,28 +73,29 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
       title: "Edit Profile",
       icon: "person-outline",
       type: "navigation",
-      onPress: () =>  navigation.navigate("EditProfile"),
+      onPress: () => navigation.navigate("EditProfile"),
     },
     {
       id: "2",
       title: "Notification",
       icon: "notifications-outline",
-      type: "navigation",
-      onPress: () =>  navigation.navigate("NotificationSettings"),
+      type: "switch", 
+      value: notificationsEnabled, 
+      onPress: () => setNotificationsEnabled(!notificationsEnabled), 
     },
     {
       id: "3",
       title: "Payment",
       icon: "card-outline",
       type: "navigation",
-      onPress: () =>  navigation.navigate("Payment"),
+      onPress: () => navigation.navigate("Payment"),
     },
     {
       id: "4",
       title: "Security",
       icon: "shield-checkmark-outline",
       type: "navigation",
-      onPress: () =>  navigation.navigate("Security"),
+      onPress: () => navigation.navigate("Security"),
     },
     {
       id: "5",
@@ -92,7 +103,7 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
       icon: "language-outline",
       type: "navigation",
       rightText: "English (US)",
-      onPress: () =>  navigation.navigate("Language"),
+      onPress: () => navigation.navigate("Language"),
     },
     {
       id: "6",
@@ -114,14 +125,14 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
       title: "Help Center",
       icon: "information-circle-outline",
       type: "navigation",
-      onPress: () =>  navigation.navigate("HelpCenterFAQ"),
+      onPress: () => navigation.navigate("HelpCenterFAQ"),
     },
     {
       id: "9",
       title: "Invite Friends",
       icon: "people-outline",
       type: "navigation",
-      onPress: () =>  navigation.navigate("InviteFriends"),
+      onPress: () => navigation.navigate("InviteFriends"),
     },
     {
       id: "10",
@@ -170,12 +181,12 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.ScrollView 
+      <Animated.ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        onScroll={onScroll} 
-        scrollEventThrottle={16} 
-        contentContainerStyle={{ paddingBottom: 100 }} 
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
         <View style={styles.header}>
           <Icon name="flash" size={28} color="#8B5CF6" style={styles.headerLogo} />
@@ -221,7 +232,7 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
           <TouchableOpacity
             style={styles.quickActionItem}
             activeOpacity={0.7}
-            onPress={() =>  navigation.navigate("Wallet")}
+            onPress={() => navigation.navigate("Wallet")}
           >
             <LinearGradient colors={["#4CAF50", "#8BC34A"]} style={styles.quickActionGradient}>
               <Icon name="wallet-outline" size={28} color="#FFFFFF" />
@@ -231,7 +242,7 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
           <TouchableOpacity
             style={styles.quickActionItem}
             activeOpacity={0.7}
-            onPress={() =>  navigation.navigate("Rewards")}
+            onPress={() => navigation.navigate("Rewards")}
           >
             <LinearGradient colors={["#FFC107", "#FFEB3B"]} style={styles.quickActionGradient}>
               <Icon name="gift-outline" size={28} color="#FFFFFF" />
@@ -241,7 +252,7 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
           <TouchableOpacity
             style={styles.quickActionItem}
             activeOpacity={0.7}
-            onPress={() =>  navigation.navigate("Achievements")}
+            onPress={() => navigation.navigate("Achievements")}
           >
             <LinearGradient colors={["#F44336", "#E57373"]} style={styles.quickActionGradient}>
               <Icon name="trophy-outline" size={28} color="#FFFFFF" />
@@ -251,7 +262,7 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
           <TouchableOpacity
             style={styles.quickActionItem}
             activeOpacity={0.7}
-            onPress={() =>  navigation.navigate("Analytics")}
+            onPress={() => navigation.navigate("Analytics")}
           >
             <LinearGradient colors={["#2196F3", "#64B5F6"]} style={styles.quickActionGradient}>
               <Icon name="bar-chart-outline" size={28} color="#FFFFFF" />
@@ -264,6 +275,25 @@ const Profile: React.FC<ProfilePropsWithScroll> = ({ onScroll }) => {
           <Text style={styles.versionText}>App Version 1.0.0</Text>
         </View>
       </Animated.ScrollView>
+
+      <CustomAlert
+        isVisible={showLogoutAlert}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        buttons={[
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => setShowLogoutAlert(false), 
+          },
+          {
+            text: "Logout",
+            style: "destructive",
+            onPress: confirmLogout, 
+          },
+        ]}
+        onClose={() => setShowLogoutAlert(false)} 
+      />
     </SafeAreaView>
   )
 }

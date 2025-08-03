@@ -1,12 +1,19 @@
 "use client"
-
 import type React from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList, Dimensions, ScrollView } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
 import { useNavigation } from "@react-navigation/native"
-import { WalletScreenProps } from "../../../Types/navigation"
+import type { StackNavigationProp } from "@react-navigation/stack"
+
+type RootStackParamList = {
+  AddMoney: undefined
+  AllTransactions: undefined
+  AddPaymentMethod: undefined
+}
+
+type WalletScreenNavigationProp = StackNavigationProp<RootStackParamList, "AddMoney">
 
 interface Transaction {
   id: string
@@ -16,23 +23,38 @@ interface Transaction {
   amount: number
 }
 
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
+
 const recentTransactions: Transaction[] = [
-  { id: "1", type: "expense", description: "Ev Temizliği", date: "Oca 15, 2025", amount: -50.0 },
-  { id: "2", type: "income", description: "Bakiye Yükleme", date: "Oca 10, 2025", amount: 100.0 },
-  { id: "3", type: "expense", description: "Araba Yıkama", date: "Oca 08, 2025", amount: -25.0 },
-  { id: "4", type: "income", description: "Referans Bonusu", date: "Oca 05, 2025", amount: 10.0 },
+  { id: "1", type: "expense", description: "House Cleaning", date: "Jan 15, 2025", amount: -50.0 },
+  { id: "2", type: "income", description: "Balance Top-up", date: "Jan 10, 2025", amount: 100.0 },
+  { id: "3", type: "expense", description: "Car Wash", date: "Jan 08, 2025", amount: -25.0 },
+  { id: "4", type: "income", description: "Referral Bonus", date: "Jan 05, 2025", amount: 10.0 },
+  { id: "5", type: "expense", description: "Grocery Shopping", date: "Jan 03, 2025", amount: -75.0 },
+  { id: "6", type: "income", description: "Freelance Work", date: "Jan 02, 2025", amount: 200.0 },
+  { id: "7", type: "expense", description: "Electricity Bill", date: "Jan 01, 2025", amount: -40.0 },
+  { id: "8", type: "expense", description: "Internet Bill", date: "Dec 30, 2024", amount: -30.0 },
+  { id: "9", type: "income", description: "Salary", date: "Dec 25, 2024", amount: 1500.0 },
+  { id: "10", type: "expense", description: "Restaurant", date: "Dec 20, 2024", amount: -60.0 },
 ]
 
 const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
   const isExpense = item.type === "expense"
   const iconName = isExpense ? "arrow-up-circle-outline" : "arrow-down-circle-outline"
-  const iconColor = isExpense ? "#EF4444" : "#10B981"
-  const amountColor = isExpense ? "#EF4444" : "#10B981"
-
+  const iconColor = isExpense ? "#FF6B6B" : "#6BFF6B"
+  const amountColor = isExpense ? "#FF6B6B" : "#6BFF6B"
   return (
     <TouchableOpacity style={styles.transactionItem}>
-      <View style={[styles.iconContainer, { backgroundColor: isExpense ? "#331A1A" : "#1A331A" }]}>
-        <Icon name={iconName} size={24} color={iconColor} />
+      <View
+        style={[
+          styles.transactionIconContainer,
+          { backgroundColor: isExpense ? "rgba(255, 107, 107, 0.1)" : "rgba(107, 255, 107, 0.1)" },
+        ]}
+      >
+        <Icon name={iconName} size={responsiveFontSize(24)} color={iconColor} />
       </View>
       <View style={styles.transactionDetails}>
         <Text style={styles.transactionDescription}>{item.description}</Text>
@@ -47,57 +69,55 @@ const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
 }
 
 const WalletScreen: React.FC = () => {
-  const navigation = useNavigation<WalletScreenProps["navigation"]>()
+  const navigation = useNavigation<WalletScreenNavigationProp>()
   const currentBalance = 1250.0
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cüzdanım</Text>
+        <Text style={styles.headerTitle}>My Wallet</Text>
         <View style={styles.placeholder} />
       </View>
-
-      <View style={styles.balanceCard}>
-        <LinearGradient
-          colors={["#4CAF50", "#66BB6A"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.balanceGradient}
-        >
-          <Text style={styles.balanceLabel}>Mevcut Bakiye</Text>
-          <Text style={styles.balanceAmount}>USD {currentBalance.toFixed(2)}</Text>
-          <TouchableOpacity style={styles.addMoneyButton} onPress={() => navigation.navigate("AddMoney")}>
-            <Icon name="add-circle-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.addMoneyButtonText}>Para Ekle</Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Son İşlemler</Text>
-      </View>
-      <FlatList
-        data={recentTransactions}
-        renderItem={({ item }) => <TransactionItem item={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.transactionsList}
-        scrollEnabled={false} // Sadece son işlemleri gösterdiği için kaydırmayı kapat
-      />
-      <TouchableOpacity style={styles.viewAllButton} onPress={() => navigation.navigate("AllTransactions")}>
-        <Text style={styles.viewAllButtonText}>Tüm İşlemleri Görüntüle</Text>
-        <Icon name="chevron-forward-outline" size={16} color="#8B5CF6" />
-      </TouchableOpacity>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Ödeme Yöntemleri</Text>
-      </View>
-      <TouchableOpacity style={styles.addPaymentMethodButton} onPress={() => navigation.navigate("AddPaymentMethod")}>
-        <MaterialCommunityIcons name="credit-card-plus-outline" size={24} color="#8B5CF6" />
-        <Text style={styles.addPaymentMethodButtonText}>Yeni Ödeme Yöntemi Ekle</Text>
-      </TouchableOpacity>
+      <ScrollView style={styles.scrollViewContent}>
+        <View style={styles.balanceCard}>
+          <LinearGradient
+            colors={["#8B5CF6", "#6B46C1"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.balanceGradient}
+          >
+            <Text style={styles.balanceLabel}>Current Balance</Text>
+            <Text style={styles.balanceAmount}>USD {currentBalance.toFixed(2)}</Text>
+            <TouchableOpacity style={styles.addMoneyButton} onPress={() => navigation.navigate("AddMoney")}>
+              <Icon name="add-circle-outline" size={responsiveFontSize(20)} color="#FFFFFF" />
+              <Text style={styles.addMoneyButtonText}>Add Money</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        </View>
+        <FlatList
+          data={recentTransactions}
+          renderItem={({ item }) => <TransactionItem item={item} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.transactionsList}
+          scrollEnabled={false}
+        />
+        <TouchableOpacity style={styles.viewAllButton} onPress={() => navigation.navigate("AllTransactions")}>
+          <Text style={styles.viewAllButtonText}>View All Transactions</Text>
+          <Icon name="chevron-forward-outline" size={responsiveFontSize(16)} color="#8B5CF6" />
+        </TouchableOpacity>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Payment Methods</Text>
+        </View>
+        <TouchableOpacity style={styles.addPaymentMethodButton} onPress={() => navigation.navigate("AddPaymentMethod")}>
+          <MaterialCommunityIcons name="credit-card-plus-outline" size={responsiveFontSize(24)} color="#8B5CF6" />
+          <Text style={styles.addPaymentMethodButtonText}>Add New Payment Method</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -105,157 +125,168 @@ const WalletScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0A0A0A",
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: responsiveHeight(4),
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   backButton: {
-    padding: 5,
+    padding: responsiveWidth(1),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 24,
+    width: responsiveFontSize(24),
   },
   balanceCard: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
+    marginHorizontal: responsiveWidth(5),
+    marginTop: responsiveHeight(3),
+    borderRadius: 20,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
   },
   balanceGradient: {
-    padding: 20,
+    paddingVertical: responsiveHeight(4),
+    paddingHorizontal: responsiveWidth(6),
     alignItems: "center",
   },
   balanceLabel: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 5,
+    fontSize: responsiveFontSize(15),
+    color: "rgba(255, 255, 255, 0.6)",
+    marginBottom: responsiveHeight(0.5),
   },
   balanceAmount: {
-    fontSize: 40,
+    fontSize: responsiveFontSize(42),
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 20,
+    marginBottom: responsiveHeight(3),
   },
   addMoneyButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: responsiveHeight(1.2),
+    paddingHorizontal: responsiveWidth(5),
   },
   addMoneyButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#FFFFFF",
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: responsiveWidth(2),
   },
   sectionHeader: {
-    paddingHorizontal: 20,
-    marginTop: 30,
-    marginBottom: 15,
+    paddingHorizontal: responsiveWidth(5),
+    marginTop: responsiveHeight(4),
+    marginBottom: responsiveHeight(2),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(22),
+    fontWeight: "700",
     color: "#FFFFFF",
   },
   transactionsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingHorizontal: responsiveWidth(5),
+    paddingBottom: responsiveHeight(1.5),
   },
   transactionItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#212121",
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
+    paddingVertical: responsiveHeight(2),
+    paddingHorizontal: responsiveWidth(4),
+    marginBottom: responsiveHeight(1.5),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 5,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  transactionIconContainer: {
+    width: responsiveFontSize(50),
+    height: responsiveFontSize(50),
+    borderRadius: responsiveFontSize(25),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: responsiveWidth(4),
   },
   transactionDetails: {
     flex: 1,
   },
   transactionDescription: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(17),
+    fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   transactionDate: {
-    fontSize: 13,
-    color: "#B0BEC5",
+    fontSize: responsiveFontSize(14),
+    color: "#9CA3AF",
   },
   transactionAmount: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(18),
+    fontWeight: "700",
   },
   viewAllButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    marginTop: 10,
-    marginHorizontal: 20,
+    paddingVertical: responsiveHeight(1.8),
+    marginTop: responsiveHeight(1.5),
+    marginHorizontal: responsiveWidth(5),
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.3)",
+    borderRadius: 12,
   },
   viewAllButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#8B5CF6",
     fontWeight: "600",
-    marginRight: 5,
+    marginRight: responsiveWidth(1.5),
   },
   addPaymentMethodButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#212121",
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
-    padding: 15,
-    marginHorizontal: 20,
-    marginTop: 10,
+    paddingVertical: responsiveHeight(2),
+    paddingHorizontal: responsiveWidth(4),
+    marginHorizontal: responsiveWidth(5),
+    marginTop: responsiveHeight(2),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 5,
   },
   addPaymentMethodButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: responsiveFontSize(17),
+    fontWeight: "600",
     color: "#FFFFFF",
-    marginLeft: 10,
+    marginLeft: responsiveWidth(3),
   },
 })
 

@@ -242,7 +242,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ navigation }) => {
       console.log("Resetting password...")
       setStep(4)
       setTimeout(() => {
-        navigation.navigate("HomeTab") // Assuming "HomeTab" is a valid route
+        navigation.navigate("Main") 
       }, 3000)
     }
   }

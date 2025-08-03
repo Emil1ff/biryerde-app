@@ -1,13 +1,17 @@
 "use client"
-
 import type React from "react"
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Alert, ScrollView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Alert, ScrollView, Dimensions } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
 import { useNavigation } from "@react-navigation/native"
-import { AddPaymentMethodScreenProps } from "../../../Types/navigation"
+import type { AddPaymentMethodScreenProps } from "../../../Types/navigation"
+
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
 
 const AddPaymentMethodScreen: React.FC = () => {
   const navigation = useNavigation<AddPaymentMethodScreenProps["navigation"]>()
@@ -42,10 +46,10 @@ const AddPaymentMethodScreen: React.FC = () => {
 
   const handleAddMethod = () => {
     if (cardNumber && cardHolder && expiryDate && cvv) {
-      Alert.alert("Ödeme Yöntemi Eklendi", "Yeni ödeme yönteminiz başarıyla eklendi.")
+      Alert.alert("Payment Method Added", "Your new payment method has been successfully added.")
       navigation.goBack()
     } else {
-      Alert.alert("Hata", "Lütfen tüm alanları doldurun.")
+      Alert.alert("Error", "Please fill in all fields.")
     }
   }
 
@@ -53,22 +57,21 @@ const AddPaymentMethodScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Yeni Ödeme Yöntemi Ekle</Text>
+        <Text style={styles.headerTitle}>Add New Payment Method</Text>
         <View style={styles.placeholder} />
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.cardPreview}>
           <LinearGradient
-            colors={["#6A1B9A", "#8E24AA"]}
+            colors={["#8B5CF6", "#A855F7"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.cardGradient}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.cardLabel}>Kredi/Banka Kartı</Text>
+              <Text style={styles.cardLabel}>Credit/Debit Card</Text>
               {cardType && (
                 <MaterialCommunityIcons
                   name={
@@ -80,32 +83,28 @@ const AddPaymentMethodScreen: React.FC = () => {
                           ? "credit-card-american-express"
                           : "credit-card-outline"
                   }
-                  size={40}
+                  size={responsiveFontSize(40)}
                   color="#FFFFFF"
                 />
               )}
             </View>
             <Text style={styles.cardNumberPreview}>
-              {cardNumber
-                .padEnd(19, "•")
-                .replace(/(\S{4})/g, "$1 ")
-                .trim()}
+              {cardNumber.padEnd(19, "•").replace(/(\S{4})/g, "$1 ").trim()}
             </Text>
             <View style={styles.cardFooter}>
               <View>
-                <Text style={styles.cardSmallText}>Kart Sahibi</Text>
-                <Text style={styles.cardHolderPreview}>{cardHolder || "AD SOYAD"}</Text>
+                <Text style={styles.cardSmallText}>Card Holder</Text>
+                <Text style={styles.cardHolderPreview}>{cardHolder || "FULL NAME"}</Text>
               </View>
               <View>
-                <Text style={styles.cardSmallText}>Son Kullanma Tarihi</Text>
-                <Text style={styles.expiryDatePreview}>{expiryDate || "AA/YY"}</Text>
+                <Text style={styles.cardSmallText}>Expiry Date</Text>
+                <Text style={styles.expiryDatePreview}>{expiryDate || "MM/YY"}</Text>
               </View>
             </View>
           </LinearGradient>
         </View>
-
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Kart Numarası</Text>
+          <Text style={styles.inputLabel}>Card Number</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
@@ -116,25 +115,23 @@ const AddPaymentMethodScreen: React.FC = () => {
             onChangeText={formatCardNumber}
           />
         </View>
-
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Kart Sahibi Adı</Text>
+          <Text style={styles.inputLabel}>Card Holder Name</Text>
           <TextInput
             style={styles.input}
-            placeholder="Kart üzerindeki ad"
+            placeholder="Name on Card"
             placeholderTextColor="#B0BEC5"
             value={cardHolder}
             onChangeText={setCardHolder}
           />
         </View>
-
         <View style={styles.rowInputs}>
           <View style={[styles.inputGroup, styles.halfInput]}>
-            <Text style={styles.inputLabel}>Son Kullanma Tarihi (AA/YY)</Text>
+            <Text style={styles.inputLabel}>Expiry Date (MM/YY)</Text>
             <TextInput
               style={styles.input}
               keyboardType="numeric"
-              placeholder="AA/YY"
+              placeholder="MM/YY"
               placeholderTextColor="#B0BEC5"
               maxLength={5}
               value={expiryDate}
@@ -155,7 +152,6 @@ const AddPaymentMethodScreen: React.FC = () => {
             />
           </View>
         </View>
-
         <TouchableOpacity style={styles.addButton} onPress={handleAddMethod}>
           <LinearGradient
             colors={["#8B5CF6", "#A855F7"]}
@@ -163,7 +159,7 @@ const AddPaymentMethodScreen: React.FC = () => {
             end={{ x: 1, y: 1 }}
             style={styles.addButtonGradient}
           >
-            <Text style={styles.addButtonText}>Ödeme Yöntemi Ekle</Text>
+            <Text style={styles.addButtonText}>Add Payment Method</Text>
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
@@ -174,47 +170,47 @@ const AddPaymentMethodScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0A0A0A",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   backButton: {
-    padding: 5,
+    padding: responsiveWidth(1),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 24,
+    width: responsiveFontSize(24),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(3),
   },
   cardPreview: {
-    marginBottom: 30,
+    marginBottom: responsiveHeight(3),
     borderRadius: 15,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
-    elevation: 10,
+    elevation: 12,
   },
   cardGradient: {
-    padding: 20,
-    height: 200,
+    padding: responsiveWidth(5),
+    height: responsiveHeight(25),
     justifyContent: "space-between",
   },
   cardHeader: {
@@ -223,12 +219,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cardLabel: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "rgba(255, 255, 255, 0.8)",
     fontWeight: "600",
   },
   cardNumberPreview: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
     letterSpacing: 1,
@@ -239,35 +235,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardSmallText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 2,
+    marginBottom: responsiveHeight(0.2),
   },
   cardHolderPreview: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   expiryDatePreview: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: responsiveHeight(2.5),
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "#B0BEC5",
-    marginBottom: 8,
+    marginBottom: responsiveHeight(1),
     fontWeight: "600",
   },
   input: {
-    backgroundColor: "#212121",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(1.8),
+    fontSize: responsiveFontSize(16),
     color: "#FFFFFF",
   },
   rowInputs: {
@@ -275,22 +271,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   halfInput: {
-    width: "48%",
+    width: responsiveWidth(43),
   },
   addButton: {
     width: "100%",
     borderRadius: 15,
     overflow: "hidden",
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: responsiveHeight(2.5),
+    marginBottom: responsiveHeight(4),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
   },
   addButtonGradient: {
-    paddingVertical: 18,
+    paddingVertical: responsiveHeight(2.5),
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: "bold",
     color: "#FFFFFF",
   },

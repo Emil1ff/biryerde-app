@@ -41,7 +41,7 @@ const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
   )
 
   const handleSignInWithPassword = () => {
-    navigation.navigate("Main")
+    navigation.navigate("Login")
   }
 
   const handleSignUp = () => {

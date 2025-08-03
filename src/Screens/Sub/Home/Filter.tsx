@@ -121,11 +121,9 @@ const Filter = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Price Range Filter */}
         <View style={styles.filterSection}>
           <Text style={styles.sectionTitle}>Price Range</Text>
           
-          {/* Quick Price Range Selection */}
           <View style={styles.priceRangeContainer}>
             {priceRanges.map((priceRange, index) => (
               <TouchableOpacity
@@ -146,7 +144,6 @@ const Filter = ({ navigation }: any) => {
             ))}
           </View>
 
-          {/* Custom Price Input */}
           <Text style={styles.customPriceTitle}>Custom Range</Text>
           <View style={styles.customPriceContainer}>
             <View style={styles.priceInputGroup}>
@@ -203,7 +200,6 @@ const Filter = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Rating Filter */}
         <View style={styles.filterSection}>
           <Text style={styles.sectionTitle}>Minimum Rating</Text>
           <View style={styles.ratingContainer}>
@@ -220,7 +216,6 @@ const Filter = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Sort By Filter */}
         <View style={styles.filterSection}>
           <Text style={styles.sectionTitle}>Sort By</Text>
           <View style={styles.sortContainer}>
@@ -238,7 +233,6 @@ const Filter = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
       <View style={styles.bottomActions}>
         <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
           <Text style={styles.resetButtonText}>Reset</Text>

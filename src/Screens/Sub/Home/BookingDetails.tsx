@@ -257,7 +257,7 @@ const BookingDetailsScreen = ({ route, navigation }: any) => {
               categoryId,
               selectedItems,
               totalPrice: (totalPrice * workingHours * (appliedPromo ? 1 - appliedPromo.value : 1)).toFixed(2),
-              selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null, // Pass as string
+              selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null, 
               selectedTime,
               workingHours,
               appliedPromo,
@@ -395,12 +395,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   workingHoursLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#E0E0E0", 
     fontWeight: "500",
   },
   quantityControl: {
     flexDirection: "row",
+    marginLeft: 10,
+    width: 110,
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.1)", 
     borderRadius: 25, 
@@ -408,7 +410,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   quantityButton: {
-    padding: 8,
+    padding: 5,
     backgroundColor: "rgba(255, 255, 255, 0.05)", 
     borderRadius: 20, 
   },
