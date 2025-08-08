@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from "react-redux"
 import type { AddressLocationScreenProps } from "../../../Types/navigation"
 import { updateBookingAddress } from "../../../redux/slices/bookingSlice"
 import type { RootState } from "../../../redux/store"
+import Geolocation from "react-native-geolocation-service" // Geolocation servisini import edin
 
 const { width, height } = Dimensions.get("window")
 const responsiveWidth = (percentage: number) => (width * percentage) / 100
@@ -37,19 +38,57 @@ const AddressLocationScreen: React.FC<AddressLocationScreenProps> = ({ route, na
   const [selectedLocation, setSelectedLocation] = useState<LatLng>(
     currentBookingAddress?.coords || { latitude: 40.758, longitude: -73.9855 },
   )
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false) // Yeni: Yerləşmə yüklənmə vəziyyəti
 
   useEffect(() => {
     console.log("Location changed:", { coords: selectedLocation, address, details: locationDetails })
-  }, [selectedLocation, address, locationDetails]) // [^1]
+  }, [selectedLocation, address, locationDetails])
 
   const handleMapPress = (event: { nativeEvent: { coordinate: LatLng } }) => {
     const newCoords = event.nativeEvent.coordinate
     setSelectedLocation(newCoords)
+    setAddress("Selected on Map") // Xəritədə seçildiyini göstərmək üçün ünvanı yeniləyin
     console.log("New map location selected:", newCoords)
     Alert.alert(
       "Location Selected",
       `Latitude: ${newCoords.latitude.toFixed(4)}\nLongitude: ${newCoords.longitude.toFixed(4)}`,
     )
+  }
+
+  // Yeni: Cari yerləşməni əldə etmək üçün funksiya
+  const getCurrentLocation = async () => {
+    setIsLoadingLocation(true)
+    try {
+      const granted = await Geolocation.requestAuthorization("whenInUse") // Yerləşmə icazəsi istəyin
+      if (granted === "granted") {
+        Geolocation.getCurrentPosition(
+          (position) => {
+            const newCoords = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }
+            setSelectedLocation(newCoords)
+            setAddress("Current Location") // Ünvanı cari yerləşmə olaraq təyin edin
+            setLocationDetails("") // Əlavə detalları təmizləyin
+            Alert.alert("Current Location", "Your current location has been set.")
+            setIsLoadingLocation(false)
+          },
+          (error) => {
+            console.error("Error getting current location:", error)
+            Alert.alert("Location Error", `Could not get current location: ${error.message}`)
+            setIsLoadingLocation(false)
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+        )
+      } else {
+        Alert.alert("Permission Denied", "Location permission is required to get your current location.")
+        setIsLoadingLocation(false)
+      }
+    } catch (err) {
+      console.error("Permission request error:", err)
+      Alert.alert("Error", "An error occurred while requesting location permission.")
+      setIsLoadingLocation(false)
+    }
   }
 
   const handleContinue = () => {
@@ -85,7 +124,8 @@ const AddressLocationScreen: React.FC<AddressLocationScreenProps> = ({ route, na
         <View style={styles.mapContainer}>
           <MapView
             style={styles.map}
-            initialRegion={{
+            region={{
+              // `initialRegion` yerinə `region` istifadə edin ki, xəritə dinamik olaraq yenilənsin
               latitude: selectedLocation.latitude,
               longitude: selectedLocation.longitude,
               latitudeDelta: 0.0922,
@@ -103,11 +143,12 @@ const AddressLocationScreen: React.FC<AddressLocationScreenProps> = ({ route, na
           </MapView>
           <TouchableOpacity
             style={styles.changeMapButton}
-            onPress={() =>
-              Alert.alert("Change Location", "This would open a more advanced location search/selection interface.")
-            }
+            onPress={getCurrentLocation} // Düyməni cari yerləşməni əldə etmək üçün istifadə edin
+            disabled={isLoadingLocation} // Yüklənərkən düyməni deaktiv edin
           >
-            <Text style={styles.changeMapButtonText}>Change Location</Text>
+            <Text style={styles.changeMapButtonText}>
+              {isLoadingLocation ? "Getting Location..." : "Get Current Location"}
+            </Text>
           </TouchableOpacity>
         </View>
         <View style={styles.section}>

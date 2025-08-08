@@ -1,6 +1,8 @@
+"use client"
+
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Pressable } from "react-native"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
 const { width, height } = Dimensions.get("window")
@@ -15,8 +17,8 @@ interface CustomAlertProps {
   isVisible: boolean
   title: string
   message: string
-  buttons?: CustomAlertButton[] 
-  onClose: () => void 
+  buttons?: CustomAlertButton[]
+  onClose: () => void
 }
 
 const CustomAlert: React.FC<CustomAlertProps> = ({ isVisible, title, message, buttons, onClose }) => {
@@ -78,9 +80,9 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ isVisible, title, message, bu
       >
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Pressable onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={width * 0.05} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
         <Text style={styles.message}>{message}</Text>
         <View style={styles.buttonContainer}>
@@ -97,7 +99,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ isVisible, title, message, bu
                 ]}
                 onPress={() => {
                   button.onPress()
-                  onClose() 
+                  onClose()
                 }}
               >
                 <Text
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#8B5CF6",
     borderRadius: 15,
     paddingVertical: height * 0.018,
-    flex: 1, 
+    flex: 1,
     alignItems: "center",
     shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 5 },
@@ -203,14 +205,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   cancelButton: {
-    backgroundColor: "#424242", 
-    // shadowColor: "#000",
+    backgroundColor: "#424242",
   },
   cancelButtonText: {
     color: "#E0E0E0",
   },
   destructiveButton: {
-    backgroundColor: "#8B5CF6", 
+    backgroundColor: "#8B5CF6",
     shadowColor: "#8B5CF6",
   },
   destructiveButtonText: {

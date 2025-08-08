@@ -1,22 +1,44 @@
 "use client"
-
 import type React from "react"
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, Platform } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
-import { useEffect, useState } from "react"
-import { CallScreenProps } from "../../Types/navigation"
+import { useEffect, useState, useRef } from "react"
+import type { CallScreenProps } from "../../Types/navigation"
 
 const Call: React.FC<CallScreenProps> = ({ navigation, route }) => {
   const { contactName, contactImage } = route.params
+  const [callStatus, setCallStatus] = useState<"calling" | "active" | "ended">("calling")
+  const [isMuted, setIsMuted] = useState(false)
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false)
   const [callDuration, setCallDuration] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null) // For web/Next.js simulation
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCallDuration((prevDuration) => prevDuration + 1)
-    }, 1000)
+    const connectTimeout = setTimeout(() => {
+      setCallStatus("active")
+      intervalRef.current = setInterval(() => {
+        setCallDuration((prevDuration) => prevDuration + 1)
+      }, 1000)
 
-    return () => clearInterval(interval)
+      if (typeof Audio !== "undefined") {
+        audioRef.current = new Audio("/audio/incoming-call.mp3") // Assuming you have an audio file at this path
+        audioRef.current.loop = true
+        audioRef.current.play().catch((e) => console.log("Audio play failed:", e))
+      }
+    }, 3000) 
+
+    return () => {
+      clearTimeout(connectTimeout)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+    }
   }, [])
 
   const formatDuration = (seconds: number) => {
@@ -25,12 +47,35 @@ const Call: React.FC<CallScreenProps> = ({ navigation, route }) => {
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`
   }
 
+  const handleEndCall = () => {
+    setCallStatus("ended")
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    navigation.goBack()
+  }
+
+  const toggleMute = () => {
+    setIsMuted((prev) => !prev)
+    // In a real React Native app, you would use InCallManager.setMicrophoneMute(!isMuted);
+    console.log(`Microphone ${isMuted ? "unmuted" : "muted"}`)
+  }
+
+  const toggleSpeaker = () => {
+    setIsSpeakerOn((prev) => !prev)
+    // In a real React Native app, you would use InCallManager.setSpeakerphoneOn(!isSpeakerOn);
+    console.log(`Speakerphone ${isSpeakerOn ? "off" : "on"}`)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Icon name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
-
       <View style={styles.content}>
         <View style={styles.profileImageContainer}>
           <Image source={{ uri: contactImage }} style={styles.profileImage} />
@@ -53,11 +98,12 @@ const Call: React.FC<CallScreenProps> = ({ navigation, route }) => {
           </View>
         </View>
         <Text style={styles.contactName}>{contactName}</Text>
-        <Text style={styles.callDuration}>{formatDuration(callDuration)} minutes</Text>
+        <Text style={styles.callDuration}>
+          {callStatus === "calling" ? "Calling..." : `${formatDuration(callDuration)} minutes`}
+        </Text>
       </View>
-
       <View style={styles.controlsContainer}>
-        <TouchableOpacity style={styles.controlButton}>
+        <TouchableOpacity style={styles.controlButton} onPress={handleEndCall}>
           <LinearGradient
             colors={["#EF4444", "#DC2626"]} // Red gradient for end call
             style={styles.controlButtonGradient}
@@ -67,26 +113,24 @@ const Call: React.FC<CallScreenProps> = ({ navigation, route }) => {
             <Icon name="close-outline" size={30} color="#FFFFFF" />
           </LinearGradient>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.controlButton}>
+        <TouchableOpacity style={styles.controlButton} onPress={toggleMute}>
           <LinearGradient
             colors={["#8B5CF6", "#A855F7"]}
             style={styles.controlButtonGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Icon name="volume-mute-outline" size={30} color="#FFFFFF" />
+            <Icon name={isMuted ? "mic-off-outline" : "mic-outline"} size={30} color="#FFFFFF" />
           </LinearGradient>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.controlButton}>
+        <TouchableOpacity style={styles.controlButton} onPress={toggleSpeaker}>
           <LinearGradient
             colors={["#8B5CF6", "#A855F7"]}
             style={styles.controlButtonGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Icon name="volume-high-outline" size={30} color="#FFFFFF" />
+            <Icon name={isSpeakerOn ? "volume-high-outline" : "volume-mute-outline"} size={30} color="#FFFFFF" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -112,7 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    marginTop:30,
+    marginTop: 30,
   },
   content: {
     flex: 1,

@@ -37,7 +37,7 @@ const ReviewSummaryScreen = ({ route, navigation }: any) => {
     }
   }
 
-  const subtotal = Number.parseFloat(totalPrice) / (appliedPromo?.value ? 1 - appliedPromo.value : 1) // Reverse promo calculation for subtotal
+  const subtotal = Number.parseFloat(totalPrice) / (appliedPromo?.value ? 1 - appliedPromo.value : 1) 
   const promoDiscount = appliedPromo ? (appliedPromo.value < 1 ? subtotal * appliedPromo.value : appliedPromo.value) : 0
   const finalTotal = Number.parseFloat(totalPrice)
 

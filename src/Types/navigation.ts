@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs"
 import type { NavigatorScreenParams, CompositeScreenProps } from "@react-navigation/native"
-import type { LatLng } from "react-native-maps" // Import LatLng
+import type { LatLng } from "react-native-maps" 
 
 export type BottomTabParamList = {
   Home: undefined
@@ -12,6 +12,8 @@ export type BottomTabParamList = {
 }
 
 export type RootStackParamList = {
+  FilteredResults: {
+    filters: {}}
   Splash: undefined
   Onboarding: undefined
   Auth: { fromOnboarding?: boolean }
@@ -44,7 +46,7 @@ export type RootStackParamList = {
   AddressLocation: {
     serviceId: string
     categoryId: string
-    selectedItems: any[] // Changed to any[] for flexibility
+    selectedItems: any[] 
     totalPrice: number
     selectedDate: string | null
     selectedTime: string | null
@@ -54,7 +56,7 @@ export type RootStackParamList = {
   PaymentMethods: {
     serviceId: string
     categoryId: string
-    selectedItems: any[] // Changed to any[] for flexibility
+    selectedItems: any[] 
     totalPrice: number
     selectedDate: string | null
     selectedTime: string | null
@@ -62,7 +64,7 @@ export type RootStackParamList = {
     appliedPromo: any
     address: string
     locationDetails: string
-    selectedLocation: LatLng // Added missing parameter
+    selectedLocation: LatLng 
   }
   ReviewSummary: {
     serviceId: string
@@ -184,6 +186,8 @@ export type BookingsScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "B
 export type CalendarScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Calendar">
 export type InboxScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Inbox">
 export type ProfileScreenPropsTab = BottomTabScreenProps<BottomTabParamList, "Profile">
+export type FilteredResultsScreenProps = NativeStackScreenProps<RootStackParamList, "FilteredResults">
+
 export type HomeScreenPropsWithScroll = CompositeScreenProps<
   HomeScreenPropsTab,
   NativeStackScreenProps<RootStackParamList>

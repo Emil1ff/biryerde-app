@@ -1,19 +1,26 @@
 "use client"
-
-import { useState } from "react"
 import type React from "react"
+import { useState, useRef, forwardRef, useImperativeHandle } from "react"
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   SafeAreaView,
   Image,
-  Animated, // Animated import edildi
+  type FlatList, 
+  Animated,
+  Dimensions,
+  StyleSheet,
 } from "react-native"
-import Icon from "react-native-vector-icons/Ionicons" // Import Ionicons
-import { useNavigation } from "@react-navigation/native" // useNavigation hook'u eklendi
-import type { InboxScreenProps } from "../../Types/navigation" // Adjusted path
+import Icon from "react-native-vector-icons/Ionicons"
+import { useNavigation } from "@react-navigation/native"
+import type { InboxScreenProps } from "../../Types/navigation"
+import { useTranslation } from "react-i18next"
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (screenWidth * percentage) / 100
+const responsiveHeight = (percentage: number) => (screenHeight * percentage) / 100
+const responsiveFontSize = (size: number) => size * (screenWidth / 375)
 
 interface Message {
   id: string
@@ -36,13 +43,27 @@ interface Call {
 }
 
 interface InboxPropsWithScroll {
-  onScroll: (event: any) => void // onScroll prop'u eklendi
+  onScroll: (event: any) => void
 }
 
-const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
-  const navigation = useNavigation<InboxScreenProps["navigation"]>() // useNavigation hook'u kullanıldı
+export interface InboxRef {
+  scrollToTop: () => void
+}
+
+const Inbox = forwardRef<InboxRef, InboxPropsWithScroll>(({ onScroll }, ref) => {
+  const { t } = useTranslation()
+  const navigation = useNavigation<InboxScreenProps["navigation"]>()
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState<"chats" | "calls">("chats") // State for tabs
+  const [activeTab, setActiveTab] = useState<"chats" | "calls">("chats")
+
+  const flatListRef = useRef<FlatList<Message | Call>>(null) // Ref for the FlatList
+
+  // Expose scrollToTop method via useImperativeHandle
+  useImperativeHandle(ref, () => ({
+    scrollToTop: () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+    },
+  }))
 
   const messages: Message[] = [
     {
@@ -218,9 +239,9 @@ const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
   const getMessageIcon = (type: string) => {
     switch (type) {
       case "voice":
-        return <Icon name="mic-outline" size={14} color="rgba(255, 255, 255, 0.7)" />
+        return <Icon name="mic-outline" size={responsiveFontSize(14)} color="rgba(255, 255, 255, 0.7)" />
       case "image":
-        return <Icon name="image-outline" size={14} color="rgba(255, 255, 255, 0.7)" />
+        return <Icon name="image-outline" size={responsiveFontSize(14)} color="rgba(255, 255, 255, 0.7)" />
       default:
         return null
     }
@@ -229,11 +250,11 @@ const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
   const getCallIcon = (type: Call["type"]) => {
     switch (type) {
       case "incoming":
-        return <Icon name="call-outline" size={16} color="#10B981" /> // Green for incoming
+        return <Icon name="call-outline" size={responsiveFontSize(16)} color="#10B981" /> // Green for incoming
       case "outgoing":
-        return <Icon name="call-made-outline" size={16} color="#8B5CF6" /> // Purple for outgoing
+        return <Icon name="call-made-outline" size={responsiveFontSize(16)} color="#8B5CF6" /> // Purple for outgoing
       case "missed":
-        return <Icon name="call-missed-outline" size={16} color="#EF4444" /> // Red for missed
+        return <Icon name="call-missed-outline" size={responsiveFontSize(16)} color="#EF4444" /> // Red for missed
       default:
         return null
     }
@@ -295,53 +316,51 @@ const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
         <View style={styles.callDetails}>
           {getCallIcon(item.type)}
           <Text style={styles.callTypeAndDate}>
-            {item.type === "incoming" && "Incoming"}
-            {item.type === "outgoing" && "Outgoing"}
-            {item.type === "missed" && "Missed"}
+            {item.type === "incoming" && t("callTypeIncoming")}
+            {item.type === "outgoing" && t("callTypeOutgoing")}
+            {item.type === "missed" && t("callTypeMissed")}
             {" | "}
             {item.date}
           </Text>
         </View>
+        {/* <TouchableOpacity style={styles.callButtonSmall}>
+          <Icon name="call-outline" size={responsiveFontSize(24)} color="#8B5CF6" />
+        </TouchableOpacity> */}
       </View>
-      <TouchableOpacity style={styles.callButtonSmall}>
-        <Icon name="call-outline" size={24} color="#8B5CF6" />
-      </TouchableOpacity>
     </TouchableOpacity>
   )
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Inbox</Text>
-        <View style={styles.headerIcons}>
+        <Text style={styles.title}>{t("inboxTitle")}</Text>
+        {/* <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.headerIcon}>
-            <Icon name="search-outline" size={24} color="#FFFFFF" />
+            <Icon name="search-outline" size={responsiveFontSize(24)} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
-            <Icon name="ellipsis-vertical-outline" size={24} color="#FFFFFF" />
+            <Icon name="ellipsis-vertical-outline" size={responsiveFontSize(24)} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
-      {/* Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "chats" && styles.activeTab]}
           onPress={() => setActiveTab("chats")}
         >
-          <Text style={[styles.tabText, activeTab === "chats" && styles.activeTabText]}>Chats</Text>
+          <Text style={[styles.tabText, activeTab === "chats" && styles.activeTabText]}>{t("chatsTab")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "calls" && styles.activeTab]}
           onPress={() => setActiveTab("calls")}
         >
-          <Text style={[styles.tabText, activeTab === "calls" && styles.activeTabText]}>Calls</Text>
+          <Text style={[styles.tabText, activeTab === "calls" && styles.activeTabText]}>{t("callsTab")}</Text>
         </TouchableOpacity>
       </View>
-      {/* Content based on active tab */}
       {activeTab === "chats" ? (
         filteredMessages.length > 0 ? (
           <Animated.FlatList
+            ref={flatListRef as React.RefObject<FlatList<Message>>}
             data={filteredMessages}
             renderItem={renderMessageItem}
             keyExtractor={(item) => item.id}
@@ -352,15 +371,16 @@ const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
           />
         ) : (
           <View style={styles.emptyState}>
-            <Icon name="chatbox-outline" size={80} color="rgba(255, 255, 255, 0.3)" />
-            <Text style={styles.emptyStateTitle}>No Messages Found</Text>
+            <Icon name="chatbox-outline" size={responsiveFontSize(80)} color="rgba(255, 255, 255, 0.3)" />
+            <Text style={styles.emptyStateTitle}>{t("noMessagesFoundTitle")}</Text>
             <Text style={styles.emptyStateDescription}>
-              {searchQuery ? "No messages match your search." : "Start a conversation with service providers."}
+              {searchQuery ? t("noMessagesSearchDescription") : t("startConversationDescription")}
             </Text>
           </View>
         )
       ) : filteredCalls.length > 0 ? (
         <Animated.FlatList
+          ref={flatListRef as React.RefObject<FlatList<Call>>} 
           data={filteredCalls}
           renderItem={renderCallItem}
           keyExtractor={(item) => item.id}
@@ -371,16 +391,16 @@ const Inbox: React.FC<InboxPropsWithScroll> = ({ onScroll }) => {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Icon name="call-outline" size={80} color="rgba(255, 255, 255, 0.3)" />
-          <Text style={styles.emptyStateTitle}>No Calls Found</Text>
+          <Icon name="call-outline" size={responsiveFontSize(80)} color="rgba(255, 255, 255, 0.3)" />
+          <Text style={styles.emptyStateTitle}>{t("noCallsFoundTitle")}</Text>
           <Text style={styles.emptyStateDescription}>
-            {searchQuery ? "No calls match your search." : "Your call history will appear here."}
+            {searchQuery ? t("noCallsSearchDescription") : t("callHistoryDescription")}
           </Text>
         </View>
       )}
     </SafeAreaView>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {
@@ -391,12 +411,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 10,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(1.2),
   },
   title: {
-    fontSize: 28,
+    fontSize: responsiveFontSize(28),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
@@ -404,25 +424,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   headerIcon: {
-    marginLeft: 15,
+    marginLeft: responsiveWidth(4),
   },
   tabsContainer: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    marginBottom: responsiveHeight(2.5),
   },
   tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 10,
+    paddingVertical: responsiveHeight(1),
+    paddingHorizontal: responsiveWidth(4),
+    borderRadius: responsiveFontSize(20),
+    marginRight: responsiveWidth(2.5),
   },
   activeTab: {
     backgroundColor: "#8B5CF6",
   },
   tabText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "600",
     color: "rgba(255, 255, 255, 0.6)",
   },
@@ -430,56 +450,56 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    marginBottom: responsiveHeight(2.5),
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: responsiveFontSize(12),
+    paddingHorizontal: responsiveWidth(4),
   },
   searchInput: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 16,
-    paddingVertical: 12,
-    marginLeft: 12,
+    fontSize: responsiveFontSize(16),
+    paddingVertical: responsiveHeight(1.5),
+    marginLeft: responsiveWidth(3),
   },
   messagesList: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingHorizontal: responsiveWidth(5),
+    paddingBottom: responsiveHeight(12), // Adjusted for tab bar height
   },
   messageItem: {
     flexDirection: "row",
-    paddingVertical: 16,
+    paddingVertical: responsiveHeight(2),
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   callItem: {
     flexDirection: "row",
-    paddingVertical: 16,
+    paddingVertical: responsiveHeight(2),
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
     alignItems: "center",
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 16,
+    marginRight: responsiveWidth(4),
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: responsiveFontSize(50),
+    height: responsiveFontSize(50),
+    borderRadius: responsiveFontSize(25),
   },
   onlineIndicator: {
     position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    bottom: responsiveHeight(0.2),
+    right: responsiveWidth(0.5),
+    width: responsiveFontSize(12),
+    height: responsiveFontSize(12),
+    borderRadius: responsiveFontSize(6),
     backgroundColor: "#10B981",
     borderWidth: 2,
     borderColor: "#000000",
@@ -491,15 +511,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   senderName: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   timestamp: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: "rgba(255, 255, 255, 0.6)",
   },
   messagePreview: {
@@ -511,26 +531,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    marginRight: 8,
+    marginRight: responsiveWidth(2),
   },
   lastMessage: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(255, 255, 255, 0.7)",
     flexShrink: 1,
-    marginLeft: 4,
+    marginLeft: responsiveWidth(1),
   },
   unreadBadge: {
     backgroundColor: "#8B5CF6",
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: responsiveFontSize(10),
+    minWidth: responsiveFontSize(20),
+    height: responsiveFontSize(20),
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 8,
-    paddingHorizontal: 6,
+    marginLeft: responsiveWidth(2),
+    paddingHorizontal: responsiveWidth(1.5),
   },
   unreadCount: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: "#FFFFFF",
     fontWeight: "bold",
   },
@@ -538,45 +558,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 40,
-    marginTop: 50,
+    paddingHorizontal: responsiveWidth(10),
+    marginTop: responsiveHeight(6),
   },
   emptyStateTitle: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: responsiveHeight(2.5),
+    marginBottom: responsiveHeight(1.5),
     textAlign: "center",
   },
   emptyStateDescription: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: responsiveFontSize(24),
   },
   callContent: {
     flex: 1,
   },
   callContactName: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   callDetails: {
     flexDirection: "row",
     alignItems: "center",
   },
   callTypeAndDate: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(255, 255, 255, 0.7)",
-    marginLeft: 5,
+    marginLeft: responsiveWidth(1.2),
   },
   callButtonSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",

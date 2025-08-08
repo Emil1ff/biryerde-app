@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from "react"
+"use client"
+import type React from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   View,
   Text,
@@ -13,7 +15,7 @@ import {
 } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
-import { ChatDetail } from "../../../Types/navigation"
+import type { ChatDetail } from "../../../Types/navigation"
 
 interface ChatMessage {
   id: string
@@ -21,15 +23,13 @@ interface ChatMessage {
   timestamp: string
   isMe: boolean
   type: "text" | "image" | "voice"
-  imageUrl?: string 
+  imageUrl?: string
 }
 
 const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
   const { chatId, senderName, senderImage, isOnline } = route.params
   const [newMessage, setNewMessage] = useState("")
-  const flatListRef = useRef<FlatList>(null)
-
-  const chatMessages: ChatMessage[] = [
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: "1",
       message: `Hi ${senderName}, good morning 😊`,
@@ -79,17 +79,25 @@ const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
       isMe: true,
       type: "image",
     },
-  ]
+  ])
+  const flatListRef = useRef<FlatList>(null)
 
   useEffect(() => {
     if (flatListRef.current) {
       flatListRef.current.scrollToEnd({ animated: true })
     }
-  }, [chatMessages]) 
+  }, [chatMessages])
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      console.log("Sending message:", newMessage)
+      const newMsg: ChatMessage = {
+        id: String(chatMessages.length + 1),
+        message: newMessage.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        isMe: true,
+        type: "text",
+      }
+      setChatMessages((prevMessages) => [...prevMessages, newMsg])
       setNewMessage("")
     }
   }
@@ -126,17 +134,22 @@ const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
             <Text style={styles.chatUserStatus}>{isOnline ? "Online" : "Last seen recently"}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.callButton}>
+        <TouchableOpacity
+          style={styles.callButton}
+          onPress={() =>
+            navigation.navigate("CallScreen", {
+              contactName: senderName,
+              contactImage: senderImage,
+            })
+          }
+        >
           <Icon name="call-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.infoButton}>
-          <Icon name="information-circle-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} 
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -148,9 +161,9 @@ const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
         />
         <View style={styles.messageInputContainer}>
           <View style={styles.messageInputWrapper}>
-            <TouchableOpacity style={styles.emojiButton}>
+            {/* <TouchableOpacity style={styles.emojiButton}>
               <Icon name="happy-outline" size={24} color="rgba(255, 255, 255, 0.6)" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TextInput
               style={styles.messageInput}
               placeholder="Message"
@@ -159,9 +172,9 @@ const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
               onChangeText={setNewMessage}
               multiline
             />
-            <TouchableOpacity style={styles.attachButton}>
+            {/* <TouchableOpacity style={styles.attachButton}>
               <Icon name="attach-outline" size={24} color="rgba(255, 255, 255, 0.6)" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
             <LinearGradient
@@ -170,7 +183,7 @@ const ChatDetailScreen: React.FC<ChatDetail> = ({ route, navigation }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Icon name="mic-outline" size={24} color="#FFFFFF" />
+              <Icon name={newMessage.trim() ? "send-outline" : "mic-outline"} size={24} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -185,13 +198,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
   },
   keyboardAvoidingView: {
-    flex: 1, 
+    flex: 1,
   },
   chatHeader: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60, 
+    paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
@@ -289,8 +302,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   chatImage: {
-    width: 200, 
-    height: 150, 
+    width: 200,
+    height: 150,
     borderRadius: 8,
     marginBottom: 4,
   },

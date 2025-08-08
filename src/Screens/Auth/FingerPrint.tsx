@@ -182,7 +182,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
         },
         {
           text: "Skip",
-          onPress: () => navigation.navigate("MainTabs"), 
+          onPress: () => navigation.navigate("Main"), 
           style: "cancel",
         },
       ])
@@ -229,7 +229,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
           Alert.alert("Success", "Biometric authentication enabled.", [
             {
               text: "Continue",
-              onPress: () => navigation.navigate("MainTabs"), 
+              onPress: () => navigation.navigate("Main"), 
             },
           ])
         }, 1000)
@@ -246,7 +246,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
         { text: "Try Again", onPress: () => handleBiometricAuth() },
         {
           text: "Skip",
-          onPress: () => navigation.navigate("MainTabs"), 
+          onPress: () => navigation.navigate("Main"), 
           style: "cancel",
         },
       ])
@@ -291,7 +291,7 @@ const FingerPrint: React.FC<FingerPrintProps> = ({ navigation }) => {
   }
 
   const handleSkip = () => {
-    navigation.navigate("MainTabs") 
+    navigation.navigate("Main") 
   }
 
   const handleBackPress = () => {

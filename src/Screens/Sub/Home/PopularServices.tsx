@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+'use client';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,185 +8,318 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useServiceData } from '../../../hooks/useServiceData';
+import type {
+  RootStackParamList,
+  ServiceItem,
+  BookmarkedService,
+} from '../../Types/data';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
-interface PopularService {
-  id: string;
-  providerName: string;
-  serviceName: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  backgroundColor: string;
-  category: string;
-  isBookmarked: boolean;
-}
+import enTranslations from '../../../Assets/lang/en.json';
+import azTranslations from '../../../Assets/lang/az.json';
+import ruTranslations from '../../../Assets/lang/ru.json';
 
-const PopularServices = ({ navigation }: any) => {
-  const [activeTab, setActiveTab] = useState('All');
-  const [services, setServices] = useState<PopularService[]>([
-    {
-      id: '1',
-      providerName: 'Jenny Wilson',
-      serviceName: 'House Cleaning',
-      price: 25,
-      rating: 4.8,
-      reviews: 8289,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#E0F2FE',
-      category: 'Cleaning',
-      isBookmarked: true,
-    },
-    {
-      id: '2',
-      providerName: 'Robert Fox',
-      serviceName: 'Floor Cleaning',
-      price: 20,
-      rating: 4.9,
-      reviews: 6182,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEE2E2',
-      category: 'Cleaning',
-      isBookmarked: false,
-    },
-    {
-      id: '3',
-      providerName: 'Kristin Watson',
-      serviceName: 'Washing Clothes',
-      price: 22,
-      rating: 4.7,
-      reviews: 7938,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEF3C7',
-      category: 'Cleaning',
-      isBookmarked: false,
-    },
-    {
-      id: '4',
-      providerName: 'John Smith',
-      serviceName: 'AC Repairing',
-      price: 35,
-      rating: 4.6,
-      reviews: 5421,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#E0F2FE',
-      category: 'Repairing',
-      isBookmarked: true,
-    },
-    {
-      id: '5',
-      providerName: 'Sarah Johnson',
-      serviceName: 'Wall Painting',
-      price: 45,
-      rating: 4.8,
-      reviews: 3892,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#F3E8FF',
-      category: 'Painting',
-      isBookmarked: false,
-    },
-    {
-      id: '6',
-      providerName: 'Mike Davis',
-      serviceName: 'Bathroom Cleaning',
-      price: 18,
-      rating: 4.5,
-      reviews: 4521,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#ECFDF5',
-      category: 'Cleaning',
-      isBookmarked: false,
-    },
-  ]);
+const { width, height } = Dimensions.get('window');
+const responsiveWidth = (percentage: number) => (width * percentage) / 100;
+const responsiveHeight = (percentage: number) => (height * percentage) / 100;
+const responsiveFontSize = (size: number) => size * (width / 375);
 
-  const categories = ['All', 'Cleaning', 'Repairing', 'Painting'];
+const allTranslations = {
+  en: enTranslations,
+  az: azTranslations,
+  ru: ruTranslations,
+};
 
-  const getFilteredServices = () => {
-    if (activeTab === 'All') {
-      return services;
-    }
-    return services.filter(service => service.category === activeTab);
+const MostPopularServicesScreen = ({
+  navigation,
+}: {
+  navigation: StackNavigationProp<RootStackParamList>;
+}) => {
+  const isFocused = useIsFocused();
+  const [locale, setLocale] = useState<'en' | 'az' | 'ru'>('en');
+  const [activeTab, setActiveTab] = useState<string>('');
+  const [bookmarkedServices, setBookmarkedServices] = useState<string[]>([]);
+  const { categories, isLoading, error } = useServiceData();
+
+  const t = (key: keyof typeof enTranslations) => {
+    return allTranslations[locale][key] || key;
   };
 
-  const toggleBookmark = (serviceId: string) => {
-    setServices(prev =>
-      prev.map(service =>
-        service.id === serviceId
-          ? { ...service, isBookmarked: !service.isBookmarked }
-          : service
-      )
+  const loadBookmarks = useCallback(async () => {
+    try {
+      const savedBookmarks = await AsyncStorage.getItem('bookmarkedServices');
+      if (savedBookmarks) {
+        setBookmarkedServices(
+          JSON.parse(savedBookmarks).map((s: BookmarkedService) => s.id),
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load bookmarks from storage', error);
+    }
+  }, []);
+
+  const saveBookmarks = useCallback(async (bookmarks: BookmarkedService[]) => {
+    try {
+      await AsyncStorage.setItem(
+        'bookmarkedServices',
+        JSON.stringify(bookmarks),
+      );
+    } catch (error) {
+      console.error('Failed to save bookmarks to storage', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadLocaleAndBookmarks = async () => {
+      try {
+        const savedLocale = await AsyncStorage.getItem('appLocale');
+        if (
+          savedLocale &&
+          (savedLocale === 'en' || savedLocale === 'az' || savedLocale === 'ru')
+        ) {
+          setLocale(savedLocale);
+        }
+        await loadBookmarks();
+      } catch (error) {
+        console.error('Failed to load locale or bookmarks from storage', error);
+      }
+    };
+    if (isFocused) {
+      loadLocaleAndBookmarks();
+    }
+  }, [isFocused, loadBookmarks]);
+
+  useEffect(() => {
+    if (categories.length > 0 && locale && activeTab === '') {
+      setActiveTab(t('all'));
+    }
+  }, [categories, locale]);
+
+  const allPopularServices: BookmarkedService[] = categories.flatMap(category =>
+    category.services.map((service: ServiceItem) => ({
+      id: service.id,
+      providerName: service.exampleProviderName || 'Unknown Provider',
+      serviceName: service.name,
+      price: service.price,
+      rating: service.rating,
+      reviews: service.reviews,
+      image: service.heroImage || '/placeholder.svg?height=300&width=400',
+      backgroundColor: category.color,
+      category: t(category.name.toLowerCase() as keyof typeof enTranslations),
+    })),
+  );
+
+  const categoriesForTabs = [
+    t('all'),
+    ...new Set(
+      categories.map(cat =>
+        t(cat.name.toLowerCase() as keyof typeof enTranslations),
+      ),
+    ),
+  ];
+
+  const getFilteredServices = () => {
+    if (activeTab === t('all')) {
+      return allPopularServices;
+    }
+    return allPopularServices.filter(service => service.category === activeTab);
+  };
+
+  const toggleBookmark = async (service: BookmarkedService) => {
+    const isBookmarked = bookmarkedServices.includes(service.id);
+    let updatedBookmarks: BookmarkedService[] = [];
+    try {
+      const currentBookmarksString = await AsyncStorage.getItem(
+        'bookmarkedServices',
+      );
+      const currentBookmarks: BookmarkedService[] = currentBookmarksString
+        ? JSON.parse(currentBookmarksString)
+        : [];
+      if (isBookmarked) {
+        updatedBookmarks = currentBookmarks.filter(s => s.id !== service.id);
+      } else {
+        updatedBookmarks = [...currentBookmarks, service];
+      }
+      await saveBookmarks(updatedBookmarks);
+      setBookmarkedServices(updatedBookmarks.map(s => s.id));
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+    }
+  };
+
+  const handleServicePress = (item: BookmarkedService) => {
+    navigation.navigate('ServiceDetail', {
+      serviceId: item.id,
+      categoryId:
+        categories.find(
+          cat =>
+            t(cat.name.toLowerCase() as keyof typeof enTranslations) ===
+            item.category,
+        )?.id || item.category,
+      serviceName: item.serviceName,
+    });
+  };
+
+  const renderServiceItem = (item: BookmarkedService) => {
+    const isBookmarked = bookmarkedServices.includes(item.id);
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.serviceItem}
+        onPress={() => handleServicePress(item)}
+      >
+        <View style={styles.serviceImageContainer}>
+          <View
+            style={[
+              styles.serviceImage,
+              { backgroundColor: item.backgroundColor },
+            ]}
+          >
+            <Image source={{ uri: item.image }} style={styles.providerImage} />
+          </View>
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryBadgeText}>{item.category}</Text>
+          </View>
+        </View>
+        <View style={styles.serviceInfo}>
+          <View style={styles.serviceHeader}>
+            <View style={styles.serviceTextContainer}>
+              <Text style={styles.providerName}>{item.providerName}</Text>
+              <Text style={styles.serviceName}>{item.serviceName}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.bookmarkButton}
+              onPress={() => toggleBookmark(item)}
+            >
+              <Icon
+                name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={responsiveFontSize(22)}
+                color={isBookmarked ? '#FF6B6B' : '#8B5CF6'}
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.serviceFooter}>
+            <View style={styles.ratingContainer}>
+              <View style={styles.starContainer}>
+                <Icon
+                  name="star"
+                  size={responsiveFontSize(16)}
+                  color="#FFD700"
+                />
+                <Text style={styles.rating}>{item.rating}</Text>
+              </View>
+              <Text style={styles.reviews}>
+                ({item.reviews.toLocaleString()} {t('reviews')})
+              </Text>
+            </View>
+            <View style={styles.priceContainer}>
+              <Text style={styles.servicePrice}>${item.price.toFixed(2)}</Text>
+              <Text style={styles.currency}>{t('currency')}</Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
   };
 
-  const renderServiceItem = (item: PopularService) => (
-    <TouchableOpacity key={item.id} style={styles.serviceItem}>
-      <View style={[styles.serviceImage, { backgroundColor: item.backgroundColor }]}>
-        <Image source={{ uri: item.image }} style={styles.providerImage} />
-      </View>
-      <View style={styles.serviceInfo}>
-        <Text style={styles.providerName}>{item.providerName}</Text>
-        <Text style={styles.serviceName}>{item.serviceName}</Text>
-        <Text style={styles.servicePrice}>${item.price}</Text>
-        <View style={styles.ratingContainer}>
-          <Icon name="star" size={16} color="#FFD700" />
-          <Text style={styles.rating}>{item.rating}</Text>
-          <Text style={styles.reviews}>| {item.reviews.toLocaleString()} reviews</Text>
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={styles.loadingText}>Loading popular services...</Text>
         </View>
-      </View>
-      <TouchableOpacity 
-        style={styles.bookmarkButton}
-        onPress={() => toggleBookmark(item.id)}
-      >
-        <Icon 
-          name={item.isBookmarked ? "bookmark" : "bookmark-outline"} 
-          size={20} 
-          color="#8B5CF6" 
-        />
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.errorContainer}>
+        <View style={styles.errorContent}>
+          <Icon
+            name="alert-circle-outline"
+            size={responsiveFontSize(64)}
+            color="#FF6B6B"
+          />
+          <Text style={styles.errorText}>Error: {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => {}}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Icon
+            name="arrow-back"
+            size={responsiveFontSize(24)}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Most Popular Services</Text>
-        <TouchableOpacity 
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>{t('mostPopularServices')}</Text>
+          <Text style={styles.headerSubtitle}>Discover top-rated services</Text>
+        </View>
+        <TouchableOpacity
           style={styles.searchButton}
           onPress={() => navigation.navigate('Search')}
         >
-          <Icon name="search-outline" size={24} color="#FFFFFF" />
+          <Icon
+            name="search-outline"
+            size={responsiveFontSize(24)}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabsContainer}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.tab,
-              activeTab === category && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab(category)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === category && styles.activeTabText,
-              ]}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContainer}
+        >
+          {categoriesForTabs.map(category => (
+            <TouchableOpacity
+              key={category}
+              style={[styles.tab, activeTab === category && styles.activeTab]}
+              onPress={() => setActiveTab(category)}
             >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === category && styles.activeTabText,
+                ]}
+              >
+                {category}
+              </Text>
+              {activeTab === category && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         <View style={styles.servicesList}>
+          <View style={styles.servicesHeader}>
+            <Text style={styles.servicesCount}>
+              {getFilteredServices().length} services found
+            </Text>
+          </View>
           {getFilteredServices().map(renderServiceItem)}
         </View>
       </ScrollView>
@@ -198,133 +332,280 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0F0F23',
+  },
+  loadingContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: responsiveFontSize(18),
+    marginTop: responsiveHeight(2),
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: '#0F0F23',
+  },
+  errorContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: responsiveWidth(5),
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: responsiveFontSize(18),
+    textAlign: 'center',
+    marginVertical: responsiveHeight(2),
+    fontWeight: '500',
+  },
+  retryButton: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: 16,
+    paddingVertical: responsiveHeight(1.5),
+    paddingHorizontal: responsiveWidth(8),
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: responsiveFontSize(16),
+    fontWeight: 'bold',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(3),
+    backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: responsiveFontSize(44),
+    height: responsiveFontSize(44),
+    borderRadius: responsiveFontSize(22),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    backdropFilter: 'blur(10px)',
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: responsiveWidth(3),
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(24),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 10,
+  },
+  headerSubtitle: {
+    fontSize: responsiveFontSize(14),
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    marginTop: responsiveHeight(0.5),
   },
   searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: responsiveFontSize(44),
+    height: responsiveFontSize(44),
+    borderRadius: responsiveFontSize(22),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    backdropFilter: 'blur(10px)',
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveHeight(2),
+    alignItems: 'center',
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
+    paddingHorizontal: responsiveWidth(6),
+    paddingVertical: responsiveHeight(1.2),
+    borderRadius: responsiveFontSize(25),
+    marginRight: responsiveWidth(3),
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.5)',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    position: 'relative',
   },
   activeTab: {
     backgroundColor: '#8B5CF6',
     borderColor: '#8B5CF6',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'rgba(139, 92, 246, 0.8)',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   activeTabText: {
     color: '#FFFFFF',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    left: '50%',
+    marginLeft: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
   },
   servicesList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingBottom: responsiveHeight(5),
+  },
+  servicesHeader: {
+    marginBottom: responsiveHeight(2),
+  },
+  servicesCount: {
+    fontSize: responsiveFontSize(16),
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
   },
   serviceItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: responsiveFontSize(20),
+    padding: responsiveWidth(4),
+    marginBottom: responsiveHeight(2.5),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: responsiveFontSize(16),
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  serviceImageContainer: {
+    position: 'relative',
     alignItems: 'center',
+    marginBottom: responsiveHeight(2),
   },
   serviceImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
+    width: responsiveFontSize(100),
+    height: responsiveFontSize(100),
+    borderRadius: responsiveFontSize(20),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   providerImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: responsiveFontSize(80),
+    height: responsiveFontSize(80),
+    borderRadius: responsiveFontSize(16),
+  },
+  categoryBadge: {
+    position: 'absolute',
+    top: -8,
+    right: responsiveWidth(25),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: responsiveWidth(3),
+    paddingVertical: responsiveHeight(0.5),
+    borderRadius: responsiveFontSize(12),
+  },
+  categoryBadgeText: {
+    fontSize: responsiveFontSize(12),
+    color: '#333',
+    fontWeight: '600',
   },
   serviceInfo: {
     flex: 1,
   },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: responsiveHeight(1.5),
+  },
+  serviceTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
   providerName: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
+    textAlign: 'center',
   },
   serviceName: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(20),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  servicePrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8B5CF6',
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 4,
-    marginRight: 4,
-  },
-  reviews: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    lineHeight: responsiveFontSize(24),
   },
   bookmarkButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    width: responsiveFontSize(44),
+    height: responsiveFontSize(44),
+    borderRadius: responsiveFontSize(22),
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'absolute',
+    right: 0,
+    top: -8,
+  },
+  serviceFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: responsiveHeight(0.5),
+  },
+  rating: {
+    fontSize: responsiveFontSize(16),
+    color: '#FFFFFF',
+    fontWeight: '700',
+    marginLeft: responsiveWidth(1),
+  },
+  reviews: {
+    fontSize: responsiveFontSize(13),
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  servicePrice: {
+    fontSize: responsiveFontSize(24),
+    fontWeight: 'bold',
+    color: '#8B5CF6',
+  },
+  currency: {
+    fontSize: responsiveFontSize(12),
+    color: 'rgba(139, 92, 246, 0.7)',
+    marginTop: responsiveHeight(0.2),
   },
 });
 
-export default PopularServices;
+export default MostPopularServicesScreen;

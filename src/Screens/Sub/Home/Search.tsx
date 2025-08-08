@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,20 +8,21 @@ import {
   ScrollView,
   TextInput,
   Image,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList, ServiceItem, BookmarkedService } from '../../../Types/data';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useServiceData } from '../../../hooks/useServiceData';
 
-interface SearchResult {
-  id: string;
-  providerName: string;
-  serviceName: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  backgroundColor: string;
-  category: string;
-}
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const responsiveWidth = (percentage: number) => (screenWidth * percentage) / 100;
+const responsiveHeight = (percentage: number) => (screenHeight * percentage) / 100;
+const responsiveFontSize = (size: number) => size * (screenWidth / 375);
 
 interface RecentSearch {
   id: string;
@@ -30,72 +31,87 @@ interface RecentSearch {
 }
 
 const Search = ({ navigation, route }: any) => {
+  const { t } = useTranslation();
+  const { categories, isLoading, error } = useServiceData();
+
   const [searchQuery, setSearchQuery] = useState(route?.params?.query || '');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<BookmarkedService[]>([]);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 
-  const recentSearches: RecentSearch[] = [
-    { id: '1', query: 'Washing Repairing', timestamp: '2 hours ago' },
-    { id: '2', query: 'Painting the Wall', timestamp: '1 day ago' },
-    { id: '3', query: 'Water Faucet Repairing', timestamp: '2 days ago' },
-    { id: '4', query: 'Window Cleaning', timestamp: '3 days ago' },
-    { id: '5', query: 'Plumbing Services', timestamp: '1 week ago' },
-    { id: '6', query: 'Computer Repairing', timestamp: '1 week ago' },
-    { id: '7', query: 'Cloth Laundry', timestamp: '2 weeks ago' },
-  ];
+  const getCategoryTranslation = useCallback(
+    (categoryName: string) => {
+      const key = categoryName.toLowerCase().replace(/\s+/g, '_');
+      return t(key, categoryName);
+    },
+    [t],
+  );
 
-  const allServices: SearchResult[] = [
-    {
-      id: '1',
-      providerName: 'Jenny Wilson',
-      serviceName: 'House Cleaning',
-      price: 25,
-      rating: 4.8,
-      reviews: 8289,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#E0F2FE',
-      category: 'Cleaning',
-    },
-    {
-      id: '2',
-      providerName: 'Robert Fox',
-      serviceName: 'Floor Cleaning',
-      price: 20,
-      rating: 4.9,
-      reviews: 6182,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEE2E2',
-      category: 'Cleaning',
-    },
-    {
-      id: '3',
-      providerName: 'Kristin Watson',
-      serviceName: 'Washing Clothes',
-      price: 22,
-      rating: 4.7,
-      reviews: 7938,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEF3C7',
-      category: 'Cleaning',
-    },
-    {
-      id: '4',
-      providerName: 'John Smith',
-      serviceName: 'Window Cleaning',
-      price: 18,
-      rating: 4.6,
-      reviews: 5421,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#E0F2FE',
-      category: 'Cleaning',
-    },
-  ];
+  const allServices: BookmarkedService[] = categories.flatMap((category) =>
+    category.services.map((service: ServiceItem) => ({
+      id: service.id,
+      providerName: service.exampleProviderName || t("unknownProvider"),
+      serviceName: service.name,
+      price: service.price,
+      rating: service.rating,
+      reviews: service.reviews,
+      image: service.heroImage || "/placeholder.svg?height=300&width=400",
+      backgroundColor: category.color,
+      category: getCategoryTranslation(category.name),
+    })),
+  );
+
+  // Load recent searches from AsyncStorage on component mount
+  useEffect(() => {
+    const loadRecentSearches = async () => {
+      try {
+        const storedSearches = await AsyncStorage.getItem('recentSearches');
+        if (storedSearches) {
+          setRecentSearches(JSON.parse(storedSearches));
+        }
+      } catch (e) {
+        console.error('Failed to load recent searches:', e);
+      }
+    };
+    loadRecentSearches();
+  }, []);
+
+  // Perform search when searchQuery or categories change
+  useEffect(() => {
+    if (searchQuery) {
+      handleSearch(searchQuery);
+    } else {
+      setSearchResults([]); // Clear results if query is empty
+    }
+  }, [searchQuery, categories]); // Re-run when categories data is loaded/changed
+
+  const saveRecentSearch = async (query: string) => {
+    if (!query.trim()) return;
+
+    const newSearch: RecentSearch = {
+      id: Date.now().toString(),
+      query: query,
+      timestamp: new Date().toLocaleString(), // You might want a more dynamic timestamp
+    };
+
+    // Remove duplicate if exists and add to the top
+    const updatedSearches = [
+      newSearch,
+      ...recentSearches.filter((s) => s.query.toLowerCase() !== query.toLowerCase()),
+    ].slice(0, 7); // Keep only the latest 7 searches
+
+    setRecentSearches(updatedSearches);
+    try {
+      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    } catch (e) {
+      console.error('Failed to save recent search:', e);
+    }
+  };
 
   const handleSearch = (query: string) => {
     setIsSearching(true);
-    setSearchQuery(query);
-    
-    // Simulate search delay
+    saveRecentSearch(query); // Save the search query
+
     setTimeout(() => {
       if (query.trim()) {
         const filtered = allServices.filter(service =>
@@ -112,7 +128,8 @@ const Search = ({ navigation, route }: any) => {
   };
 
   const handleRecentSearchPress = (query: string) => {
-    handleSearch(query);
+    setSearchQuery(query);
+    // handleSearch will be called by the useEffect when searchQuery changes
   };
 
   const clearSearch = () => {
@@ -121,7 +138,16 @@ const Search = ({ navigation, route }: any) => {
     setIsSearching(false);
   };
 
-  const renderSearchResult = (item: SearchResult) => (
+  const clearAllRecentSearches = async () => {
+    setRecentSearches([]);
+    try {
+      await AsyncStorage.removeItem('recentSearches');
+    } catch (e) {
+      console.error('Failed to clear all recent searches:', e);
+    }
+  };
+
+  const renderSearchResult = (item: BookmarkedService) => (
     <TouchableOpacity key={item.id} style={styles.resultItem}>
       <View style={[styles.resultImage, { backgroundColor: item.backgroundColor }]}>
         <Image source={{ uri: item.image }} style={styles.providerImage} />
@@ -129,32 +155,32 @@ const Search = ({ navigation, route }: any) => {
       <View style={styles.resultInfo}>
         <Text style={styles.providerName}>{item.providerName}</Text>
         <Text style={styles.serviceName}>{item.serviceName}</Text>
-        <Text style={styles.servicePrice}>${item.price}</Text>
+        <Text style={styles.servicePrice}>{item.price.toFixed(2)} {t("currency")}</Text>
         <View style={styles.ratingContainer}>
-          <Icon name="star" size={16} color="#FFD700" />
+          <Icon name="star" size={responsiveFontSize(16)} color="#FFD700" />
           <Text style={styles.rating}>{item.rating}</Text>
-          <Text style={styles.reviews}>| {item.reviews.toLocaleString()} reviews</Text>
+          <Text style={styles.reviews}>| {item.reviews.toLocaleString()} {t("reviews")}</Text>
         </View>
       </View>
       <TouchableOpacity style={styles.bookmarkButton}>
-        <Icon name="bookmark-outline" size={20} color="#8B5CF6" />
+        <Icon name="bookmark-outline" size={responsiveFontSize(20)} color="#8B5CF6" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   const renderRecentSearch = (item: RecentSearch) => (
-    <TouchableOpacity 
-      key={item.id} 
+    <TouchableOpacity
+      key={item.id}
       style={styles.recentItem}
       onPress={() => handleRecentSearchPress(item.query)}
     >
-      <Icon name="time-outline" size={20} color="rgba(255, 255, 255, 0.5)" />
+      <Icon name="time-outline" size={responsiveFontSize(20)} color="rgba(255, 255, 255, 0.5)" />
       <View style={styles.recentTextContainer}>
         <Text style={styles.recentQuery}>{item.query}</Text>
         <Text style={styles.recentTime}>{item.timestamp}</Text>
       </View>
       <TouchableOpacity style={styles.deleteButton}>
-        <Icon name="close" size={16} color="rgba(255, 255, 255, 0.5)" />
+        <Icon name="close" size={responsiveFontSize(16)} color="rgba(255, 255, 255, 0.5)" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -162,26 +188,48 @@ const Search = ({ navigation, route }: any) => {
   const renderNotFound = () => (
     <View style={styles.notFoundContainer}>
       <View style={styles.notFoundIcon}>
-        <Icon name="search-outline" size={80} color="#8B5CF6" />
+        <Icon name="search-outline" size={responsiveFontSize(80)} color="#8B5CF6" />
       </View>
-      <Text style={styles.notFoundTitle}>Not Found</Text>
+      <Text style={styles.notFoundTitle}>{t("notFound")}</Text>
       <Text style={styles.notFoundDescription}>
-        Sorry, the keyword you entered cannot be found. Please check again or search with another keyword.
+        {t("notFoundDescription")}
       </Text>
     </View>
   );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8B5CF6" />
+        <Text style={styles.loadingText}>{t("loading")}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {t("error")}: {error}
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => { /* retry logic */ }}>
+          <Text style={styles.retryButtonText}>{t("retry")}</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
-          <Icon name="search-outline" size={20} color="rgba(255, 255, 255, 0.5)" />
+          <Icon name="search-outline" size={responsiveFontSize(20)} color="rgba(255, 255, 255, 0.5)" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={t("searchPlaceholder")}
             placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -190,49 +238,46 @@ const Search = ({ navigation, route }: any) => {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={clearSearch}>
-              <Icon name="close" size={20} color="rgba(255, 255, 255, 0.5)" />
+              <Icon name="close" size={responsiveFontSize(20)} color="rgba(255, 255, 255, 0.5)" />
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.filterButton}
           onPress={() => navigation.navigate('Filter')}
         >
-          <Icon name="options-outline" size={24} color="#FFFFFF" />
+          <Icon name="options-outline" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {!searchQuery && !isSearching && searchResults.length === 0 && (
           <View style={styles.recentContainer}>
             <View style={styles.recentHeader}>
-              <Text style={styles.recentTitle}>Recent</Text>
-              <TouchableOpacity>
-                <Text style={styles.clearAllText}>Clear All</Text>
+              <Text style={styles.recentTitle}>{t("recentSearches")}</Text>
+              <TouchableOpacity onPress={clearAllRecentSearches}>
+                <Text style={styles.clearAllText}>{t("clearAll")}</Text>
               </TouchableOpacity>
             </View>
             {recentSearches.map(renderRecentSearch)}
           </View>
         )}
-
         {isSearching && (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Searching...</Text>
+            <ActivityIndicator size="large" color="#8B5CF6" />
+            <Text style={styles.loadingText}>{t("searching")}</Text>
           </View>
         )}
-
         {!isSearching && searchQuery && searchResults.length > 0 && (
           <View style={styles.resultsContainer}>
             <Text style={styles.resultsTitle}>
-              Results for "{searchQuery}"
+              {t("resultsFor", { query: searchQuery })}
             </Text>
             <Text style={styles.resultsCount}>
-              {searchResults.length} results found
+              {t("resultsFound", { count: searchResults.length })}
             </Text>
             {searchResults.map(renderSearchResult)}
           </View>
         )}
-
         {!isSearching && searchQuery && searchResults.length === 0 && renderNotFound()}
       </ScrollView>
     </SafeAreaView>
@@ -244,175 +289,200 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0A0A',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: responsiveFontSize(18),
+    marginTop: responsiveHeight(2),
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0A0A',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: responsiveFontSize(18),
+    textAlign: 'center',
+    marginBottom: responsiveHeight(2),
+  },
+  retryButton: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: responsiveFontSize(12),
+    paddingVertical: responsiveHeight(1.5),
+    paddingHorizontal: responsiveWidth(5),
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: responsiveFontSize(16),
+    fontWeight: 'bold',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(6),
+    paddingBottom: responsiveHeight(2),
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: responsiveWidth(3),
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginRight: 12,
+    borderRadius: responsiveFontSize(12),
+    paddingHorizontal: responsiveWidth(4),
+    marginRight: responsiveWidth(3),
   },
   searchInput: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 16,
-    paddingVertical: 12,
-    marginLeft: 12,
+    fontSize: responsiveFontSize(16),
+    paddingVertical: responsiveHeight(1.5),
+    marginLeft: responsiveWidth(3),
   },
   filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: responsiveFontSize(48),
+    height: responsiveFontSize(48),
+    borderRadius: responsiveFontSize(12),
     backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: responsiveWidth(5),
   },
   recentContainer: {
-    marginTop: 20,
+    marginTop: responsiveHeight(2),
   },
   recentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: responsiveHeight(2),
   },
   recentTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   clearAllText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#8B5CF6',
     fontWeight: '600',
   },
   recentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: responsiveHeight(1.5),
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   recentTextContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: responsiveWidth(3),
   },
   recentQuery: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#FFFFFF',
-    marginBottom: 2,
+    marginBottom: responsiveHeight(0.2),
   },
   recentTime: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: 'rgba(255, 255, 255, 0.5)',
   },
   deleteButton: {
-    padding: 8,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.6)',
+    padding: responsiveWidth(2),
   },
   resultsContainer: {
-    marginTop: 20,
+    marginTop: responsiveHeight(2),
   },
   resultsTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: responsiveHeight(1),
   },
   resultsCount: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 20,
+    marginBottom: responsiveHeight(2.5),
   },
   resultItem: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: responsiveFontSize(16),
+    padding: responsiveWidth(4),
+    marginBottom: responsiveHeight(2),
     alignItems: 'center',
   },
   resultImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
+    width: responsiveFontSize(80),
+    height: responsiveFontSize(80),
+    borderRadius: responsiveFontSize(16),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: responsiveWidth(4),
   },
   providerImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: responsiveFontSize(60),
+    height: responsiveFontSize(60),
+    borderRadius: responsiveFontSize(12),
   },
   resultInfo: {
     flex: 1,
   },
   providerName: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   serviceName: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: responsiveHeight(0.5),
   },
   servicePrice: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: 'bold',
     color: '#8B5CF6',
-    marginBottom: 8,
+    marginBottom: responsiveHeight(1),
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   rating: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: '#FFFFFF',
     fontWeight: '600',
-    marginLeft: 4,
-    marginRight: 4,
+    marginLeft: responsiveWidth(1),
+    marginRight: responsiveWidth(1),
   },
   reviews: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'rgba(255, 255, 255, 0.6)',
   },
   bookmarkButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
     backgroundColor: 'rgba(139, 92, 246, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -420,29 +490,29 @@ const styles = StyleSheet.create({
   notFoundContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: responsiveHeight(10),
   },
   notFoundIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: responsiveFontSize(120),
+    height: responsiveFontSize(120),
+    borderRadius: responsiveFontSize(60),
     backgroundColor: 'rgba(139, 92, 246, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: responsiveHeight(3),
   },
   notFoundTitle: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: responsiveHeight(1.5),
   },
   notFoundDescription: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    lineHeight: responsiveFontSize(24),
+    paddingHorizontal: responsiveWidth(5),
   },
 });
 

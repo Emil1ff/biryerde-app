@@ -18,9 +18,9 @@ import {
 import Icon from "react-native-vector-icons/Ionicons"
 import LinearGradient from "react-native-linear-gradient"
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true)
-}
+// if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true)
+// }
 
 interface FAQItem {
   id: string
@@ -191,9 +191,6 @@ const HelpCenter: React.FC<any> = ({ navigation }) => {
           <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help Center</Text>
-        {/* <TouchableOpacity style={styles.searchButton}>
-          <Icon name="search-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity> */}
         <View style={styles.bos}></View>
       </View>
 

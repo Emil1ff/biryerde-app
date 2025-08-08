@@ -1,28 +1,75 @@
 "use client"
-
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, TextInput } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, TextInput, Dimensions } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
+import { useNavigation, useIsFocused } from "@react-navigation/native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import type { FilterState, RootStackParamList } from "../../../Types/data"
+import type { StackNavigationProp } from "@react-navigation/stack"
+import { useTranslation } from "react-i18next" // Import useTranslation
 
-interface FilterState {
-  category: string
-  priceRange: [number, number]
-  rating: number
-  sortBy: string
-}
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
 
-const Filter = ({ navigation }: any) => {
+const Filter = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>()
+  const isFocused = useIsFocused()
+  const { t, i18n } = useTranslation() // Use the t function and i18n instance
+  const [locale, setLocale] = useState<"en" | "az" | "ru">("en")
+
   const [filters, setFilters] = useState<FilterState>({
-    category: "Cleaning",
+    category: "",
     priceRange: [20, 80],
     rating: 4.0,
-    sortBy: "Most Popular",
+    sortBy: "",
   })
 
-  const categories = ["Cleaning", "Repairing", "Painting", "Laundry", "Appliance", "Plumbing"]
-  const sortOptions = ["Most Popular", "Highest Rating", "Lowest Price", "Highest Price", "Newest"]
+  useEffect(() => {
+    const loadLocale = async () => {
+      try {
+        const savedLocale = await AsyncStorage.getItem("appLocale")
+        if (savedLocale && (savedLocale === "en" || savedLocale === "az" || savedLocale === "ru")) {
+          setLocale(savedLocale)
+          await i18n.changeLanguage(savedLocale) // Ensure i18n instance updates
+        }
+      } catch (error) {
+        console.error("Failed to load locale from storage", error)
+      }
+    }
+    if (isFocused) {
+      loadLocale()
+    }
+  }, [isFocused, i18n])
+
+  useEffect(() => {
+    // Initialize filters with translated default values once locale is loaded
+    if (locale) {
+      setFilters((prev) => ({
+        ...prev,
+        category: prev.category || t("cleaning"),
+        sortBy: prev.sortBy || t("mostPopular"),
+      }))
+    }
+  }, [locale, t]) // Depend on t to re-run when language changes
+
+  const categories = [
+    t("cleaning"),
+    t("repairing"),
+    t("painting"),
+    t("laundry"),
+    t("appliance"),
+    t("plumbing"),
+  ]
+  const sortOptions = [
+    t("mostPopular"),
+    t("highestRating"),
+    t("lowestPrice"),
+    t("highestPrice"),
+    t("newest"),
+  ]
   const ratings = [1, 2, 3, 4, 5]
-  
   const priceRanges = [
     { label: "$10 - $30", range: [10, 30] },
     { label: "$20 - $50", range: [20, 50] },
@@ -35,59 +82,50 @@ const Filter = ({ navigation }: any) => {
   const handleCategorySelect = (category: string) => {
     setFilters((prev) => ({ ...prev, category }))
   }
-
   const handleRatingSelect = (rating: number) => {
     setFilters((prev) => ({ ...prev, rating }))
   }
-
   const handleSortSelect = (sortBy: string) => {
     setFilters((prev) => ({ ...prev, sortBy }))
   }
-
   const handlePriceRangeSelect = (range: [number, number]) => {
     setFilters((prev) => ({ ...prev, priceRange: range }))
   }
-
   const handleMinPriceChange = (text: string) => {
-    const value = parseInt(text) || 0
+    const value = Number.parseInt(text) || 0
     setFilters((prev) => ({ ...prev, priceRange: [value, prev.priceRange[1]] }))
   }
-
   const handleMaxPriceChange = (text: string) => {
-    const value = parseInt(text) || 0
+    const value = Number.parseInt(text) || 0
     setFilters((prev) => ({ ...prev, priceRange: [prev.priceRange[0], value] }))
   }
-
   const adjustPrice = (isMin: boolean, increment: boolean) => {
     const step = 10
     setFilters((prev) => {
       if (isMin) {
-        const newMin = increment 
+        const newMin = increment
           ? Math.min(prev.priceRange[0] + step, prev.priceRange[1] - step)
           : Math.max(prev.priceRange[0] - step, 0)
         return { ...prev, priceRange: [newMin, prev.priceRange[1]] }
       } else {
-        const newMax = increment 
+        const newMax = increment
           ? prev.priceRange[1] + step
           : Math.max(prev.priceRange[1] - step, prev.priceRange[0] + step)
         return { ...prev, priceRange: [prev.priceRange[0], newMax] }
       }
     })
   }
-
   const resetFilters = () => {
     setFilters({
-      category: "Cleaning",
+      category: t("cleaning"),
       priceRange: [20, 80],
       rating: 4.0,
-      sortBy: "Most Popular",
+      sortBy: t("mostPopular"),
     })
   }
-
   const applyFilters = () => {
-    navigation.navigate("Search", { filters })
+    navigation.navigate("FilteredResults", { filters })
   }
-
   const isPriceRangeSelected = (range: [number, number]) => {
     return filters.priceRange[0] === range[0] && filters.priceRange[1] === range[1]
   }
@@ -96,16 +134,14 @@ const Filter = ({ navigation }: any) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Filter</Text>
+        <Text style={styles.headerTitle}>{t("filter")}</Text>
         <View style={styles.placeholder} />
       </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Category Filter */}
         <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Category</Text>
+          <Text style={styles.sectionTitle}>{t("category")}</Text>
           <View style={styles.categoryContainer}>
             {categories.map((category) => (
               <TouchableOpacity
@@ -120,40 +156,36 @@ const Filter = ({ navigation }: any) => {
             ))}
           </View>
         </View>
-
         <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Price Range</Text>
-          
+          <Text style={styles.sectionTitle}>{t("priceRange")}</Text>
           <View style={styles.priceRangeContainer}>
             {priceRanges.map((priceRange, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
                   styles.priceRangeChip,
-                  isPriceRangeSelected(priceRange.range as [number, number]) && styles.activePriceRangeChip
+                  isPriceRangeSelected(priceRange.range as [number, number]) && styles.activePriceRangeChip,
                 ]}
                 onPress={() => handlePriceRangeSelect(priceRange.range as [number, number])}
               >
-                <Text style={[
-                  styles.priceRangeText,
-                  isPriceRangeSelected(priceRange.range as [number, number]) && styles.activePriceRangeText
-                ]}>
+                <Text
+                  style={[
+                    styles.priceRangeText,
+                    isPriceRangeSelected(priceRange.range as [number, number]) && styles.activePriceRangeText,
+                  ]}
+                >
                   {priceRange.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-
-          <Text style={styles.customPriceTitle}>Custom Range</Text>
+          <Text style={styles.customPriceTitle}>{t("customRange")}</Text>
           <View style={styles.customPriceContainer}>
             <View style={styles.priceInputGroup}>
-              <Text style={styles.priceLabel}>Min Price</Text>
+              <Text style={styles.priceLabel}>{t("minPrice")}</Text>
               <View style={styles.priceInputContainer}>
-                <TouchableOpacity 
-                  style={styles.priceButton}
-                  onPress={() => adjustPrice(true, false)}
-                >
-                  <Icon name="remove" size={16} color="#8B5CF6" />
+                <TouchableOpacity style={styles.priceButton} onPress={() => adjustPrice(true, false)}>
+                  <Icon name="remove" size={responsiveFontSize(16)} color="#8B5CF6" />
                 </TouchableOpacity>
                 <TextInput
                   style={styles.priceInput}
@@ -163,23 +195,16 @@ const Filter = ({ navigation }: any) => {
                   placeholder="Min"
                   placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 />
-                <TouchableOpacity 
-                  style={styles.priceButton}
-                  onPress={() => adjustPrice(true, true)}
-                >
-                  <Icon name="add" size={16} color="#8B5CF6" />
+                <TouchableOpacity style={styles.priceButton} onPress={() => adjustPrice(true, true)}>
+                  <Icon name="add" size={responsiveFontSize(16)} color="#8B5CF6" />
                 </TouchableOpacity>
               </View>
             </View>
-
             <View style={styles.priceInputGroup}>
-              <Text style={styles.priceLabel}>Max Price</Text>
+              <Text style={styles.priceLabel}>{t("maxPrice")}</Text>
               <View style={styles.priceInputContainer}>
-                <TouchableOpacity 
-                  style={styles.priceButton}
-                  onPress={() => adjustPrice(false, false)}
-                >
-                  <Icon name="remove" size={16} color="#8B5CF6" />
+                <TouchableOpacity style={styles.priceButton} onPress={() => adjustPrice(false, false)}>
+                  <Icon name="remove" size={responsiveFontSize(16)} color="#8B5CF6" />
                 </TouchableOpacity>
                 <TextInput
                   style={styles.priceInput}
@@ -189,19 +214,15 @@ const Filter = ({ navigation }: any) => {
                   placeholder="Max"
                   placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 />
-                <TouchableOpacity 
-                  style={styles.priceButton}
-                  onPress={() => adjustPrice(false, true)}
-                >
-                  <Icon name="add" size={16} color="#8B5CF6" />
+                <TouchableOpacity style={styles.priceButton} onPress={() => adjustPrice(false, true)}>
+                  <Icon name="add" size={responsiveFontSize(16)} color="#8B5CF6" />
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         </View>
-
         <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Minimum Rating</Text>
+          <Text style={styles.sectionTitle}>{t("minimumRating")}</Text>
           <View style={styles.ratingContainer}>
             {ratings.map((rating) => (
               <TouchableOpacity
@@ -209,15 +230,18 @@ const Filter = ({ navigation }: any) => {
                 style={[styles.ratingChip, filters.rating >= rating && styles.activeRatingChip]}
                 onPress={() => handleRatingSelect(rating)}
               >
-                <Icon name="star" size={20} color={filters.rating >= rating ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)"} />
+                <Icon
+                  name="star"
+                  size={responsiveFontSize(20)}
+                  color={filters.rating >= rating ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)"}
+                />
                 <Text style={[styles.ratingText, filters.rating >= rating && styles.activeRatingText]}>{rating}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-
         <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Sort By</Text>
+          <Text style={styles.sectionTitle}>{t("sortBy")}</Text>
           <View style={styles.sortContainer}>
             {sortOptions.map((option) => (
               <TouchableOpacity
@@ -226,19 +250,18 @@ const Filter = ({ navigation }: any) => {
                 onPress={() => handleSortSelect(option)}
               >
                 <Text style={[styles.sortText, filters.sortBy === option && styles.activeSortText]}>{option}</Text>
-                {filters.sortBy === option && <Icon name="checkmark" size={20} color="#8B5CF6" />}
+                {filters.sortBy === option && <Icon name="checkmark" size={responsiveFontSize(20)} color="#8B5CF6" />}
               </TouchableOpacity>
             ))}
           </View>
         </View>
       </ScrollView>
-
       <View style={styles.bottomActions}>
         <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
-          <Text style={styles.resetButtonText}>Reset</Text>
+          <Text style={styles.resetButtonText}>{t("reset")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
-          <Text style={styles.applyButtonText}>Apply Filter</Text>
+          <Text style={styles.applyButtonText}>{t("applyFilter")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -254,48 +277,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 40,
+    width: responsiveFontSize(40),
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveHeight(2.5),
   },
   filterSection: {
-    marginBottom: 30,
+    marginBottom: responsiveHeight(3),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 16,
+    marginBottom: responsiveHeight(2),
   },
   categoryContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: responsiveWidth(3),
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(1),
+    borderRadius: responsiveFontSize(20),
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.5)",
     backgroundColor: "transparent",
@@ -305,7 +329,7 @@ const styles = StyleSheet.create({
     borderColor: "#8B5CF6",
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(139, 92, 246, 0.8)",
     fontWeight: "500",
   },
@@ -315,13 +339,13 @@ const styles = StyleSheet.create({
   priceRangeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 20,
+    gap: responsiveWidth(3),
+    marginBottom: responsiveHeight(2.5),
   },
   priceRangeChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(1),
+    borderRadius: responsiveFontSize(20),
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.5)",
     backgroundColor: "transparent",
@@ -331,7 +355,7 @@ const styles = StyleSheet.create({
     borderColor: "#8B5CF6",
   },
   priceRangeText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(139, 92, 246, 0.8)",
     fontWeight: "500",
   },
@@ -339,57 +363,57 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   customPriceTitle: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#FFFFFF",
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: responsiveHeight(1.5),
   },
   customPriceContainer: {
     flexDirection: "row",
-    gap: 16,
+    gap: responsiveWidth(4),
   },
   priceInputGroup: {
     flex: 1,
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(255, 255, 255, 0.6)",
-    marginBottom: 8,
+    marginBottom: responsiveHeight(1),
   },
   priceInputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    paddingHorizontal: 4,
+    borderRadius: responsiveFontSize(12),
+    paddingHorizontal: responsiveWidth(1),
   },
   priceButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: responsiveFontSize(32),
+    height: responsiveFontSize(32),
+    borderRadius: responsiveFontSize(16),
     backgroundColor: "rgba(139, 92, 246, 0.2)",
     justifyContent: "center",
     alignItems: "center",
-    margin: 4,
+    margin: responsiveWidth(1),
   },
   priceInput: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "600",
     textAlign: "center",
-    paddingVertical: 12,
+    paddingVertical: responsiveHeight(1.5),
   },
   ratingContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: responsiveWidth(3),
   },
   ratingChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(1),
+    borderRadius: responsiveFontSize(20),
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.3)",
     backgroundColor: "transparent",
@@ -399,24 +423,24 @@ const styles = StyleSheet.create({
     borderColor: "#8B5CF6",
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "rgba(255, 255, 255, 0.6)",
     fontWeight: "500",
-    marginLeft: 4,
+    marginLeft: responsiveWidth(1),
   },
   activeRatingText: {
     color: "#FFFFFF",
   },
   sortContainer: {
-    gap: 12,
+    gap: responsiveHeight(1.5),
   },
   sortOption: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingVertical: responsiveHeight(2),
+    paddingHorizontal: responsiveWidth(5),
+    borderRadius: responsiveFontSize(12),
     backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   activeSortOption: {
@@ -425,7 +449,7 @@ const styles = StyleSheet.create({
     borderColor: "#8B5CF6",
   },
   sortText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "rgba(255, 255, 255, 0.8)",
     fontWeight: "500",
   },
@@ -434,33 +458,41 @@ const styles = StyleSheet.create({
   },
   bottomActions: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    gap: 16,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveHeight(2.5),
+    gap: responsiveWidth(4),
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "#1A1A2E",
   },
   resetButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: responsiveHeight(2),
+    borderRadius: responsiveFontSize(12),
     borderWidth: 1,
     borderColor: "#8B5CF6",
     backgroundColor: "transparent",
     alignItems: "center",
   },
   resetButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#8B5CF6",
     fontWeight: "bold",
   },
   applyButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: responsiveHeight(2),
+    borderRadius: responsiveFontSize(12),
     backgroundColor: "#8B5CF6",
     alignItems: "center",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 10,
   },
   applyButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: "#FFFFFF",
     fontWeight: "bold",
   },

@@ -76,10 +76,11 @@ const EReceiptScreen = ({ route, navigation }: any) => {
       <ScrollView style={styles.scrollView}>
         <View style={styles.barcodeContainer}>
           <Image
-            source={{ uri: "/placeholder.svg?height=80&width=200" }}
+            source={{ uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/QR_deWP.svg/1200px-QR_deWP.svg.png" }}
             style={styles.barcodeImage}
             resizeMode="contain"
           />
+          <View style={styles.logo}><View style={styles.logo2}></View></View>
           <Text style={styles.barcodeText}>#17728</Text>
         </View>
 
@@ -173,6 +174,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
+  logo: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#8B5CF6",
+    borderRadius: 10,
+    position: "absolute",
+    top: "45%",
+    transform: [{ rotate: '45deg' }]
+  },
+  logo2: {
+    width: 20,
+    height: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 5,
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -10 }, { translateY: -10 }],
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -180,6 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
+
   },
   backButton: {
     width: 40,
@@ -209,16 +230,17 @@ const styles = StyleSheet.create({
   },
   barcodeContainer: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    // backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 16,
     paddingVertical: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    // borderColor: "rgba(255, 255, 255, 0.1)",
+    position: "relative",
   },
   barcodeImage: {
     width: "80%",
-    height: 80,
+    height: 200,
     marginBottom: 10,
   },
   barcodeText: {

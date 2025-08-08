@@ -3,6 +3,7 @@ import { useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import { useTranslation } from "react-i18next"
 
 // Mock data for payment methods
 const paymentMethods = [
@@ -14,6 +15,7 @@ const paymentMethods = [
 ]
 
 const PaymentMethodsScreen = ({ route, navigation }: any) => {
+  const { t } = useTranslation()
   const {
     serviceId,
     categoryId,
@@ -44,7 +46,7 @@ const PaymentMethodsScreen = ({ route, navigation }: any) => {
         selectedPaymentMethod,
       })
     } else {
-      alert("Please select a payment method.")
+      alert(t("selectPaymentMethodAlert"))
     }
   }
 
@@ -54,13 +56,11 @@ const PaymentMethodsScreen = ({ route, navigation }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payment Methods</Text>
-        <View style={{ width: 40 }} /> 
+        <Text style={styles.headerTitle}>{t("paymentMethodsTitle")}</Text>
+        <View style={{ width: 40 }} />
       </View>
-
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.instructionText}>Select the payment method you want to use</Text>
-
+        <Text style={styles.instructionText}>{t("selectPaymentMethodInstruction")}</Text>
         {paymentMethods.map((method) => (
           <TouchableOpacity
             key={method.id}
@@ -73,7 +73,7 @@ const PaymentMethodsScreen = ({ route, navigation }: any) => {
               <MaterialIcons name={method.icon} size={28} color="#FFFFFF" style={styles.paymentIcon} />
             )}
             <View style={styles.paymentInfo}>
-              <Text style={styles.paymentName}>{method.name}</Text>
+              <Text style={styles.paymentName}>{t(method.id)}</Text>
               {method.last4 && <Text style={styles.paymentDetails}>**** {method.last4}</Text>}
             </View>
             <View style={styles.radioCircle}>
@@ -82,10 +82,9 @@ const PaymentMethodsScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{t("continueButton")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

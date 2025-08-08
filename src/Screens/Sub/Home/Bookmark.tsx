@@ -1,94 +1,105 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Image,
-  Alert,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+"use client"
+import { useState, useEffect, useCallback } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, Dimensions } from "react-native"
+import Icon from "react-native-vector-icons/Ionicons"
+import { useIsFocused } from "@react-navigation/native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useTranslation } from "react-i18next"
+import type { BookmarkedService } from "../../Types/data"
+import CustomAlert from "../../../Components/CustomAlert"
 
-interface BookmarkedService {
-  id: string;
-  providerName: string;
-  serviceName: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  backgroundColor: string;
-  category: string;
-}
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
 
 const Bookmark = ({ navigation }: any) => {
-  const [activeTab, setActiveTab] = useState('All');
-  const [bookmarkedServices, setBookmarkedServices] = useState<BookmarkedService[]>([
-    {
-      id: '1',
-      providerName: 'Jenny Wilson',
-      serviceName: 'House Cleaning',
-      price: 25,
-      rating: 4.8,
-      reviews: 8289,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#E0F2FE',
-      category: 'Cleaning',
-    },
-    {
-      id: '2',
-      providerName: 'Robert Fox',
-      serviceName: 'AC Repairing',
-      price: 35,
-      rating: 4.6,
-      reviews: 5421,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEE2E2',
-      category: 'Repairing',
-    },
-    {
-      id: '3',
-      providerName: 'Kristin Watson',
-      serviceName: 'Laundry Services',
-      price: 22,
-      rating: 4.7,
-      reviews: 7938,
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/148380a44d57cc7efcc92023de6ed6d5007efe99.jpg-Ee3F4IckYQTXlqw16FxK7RHE7XJlR9.jpeg',
-      backgroundColor: '#FEF3C7',
-      category: 'Cleaning',
-    },
-  ]);
+  const isFocused = useIsFocused()
+  const { t, i18n } = useTranslation()
+  const [locale, setLocale] = useState<"en" | "az" | "ru">("en")
+  const [activeTab, setActiveTab] = useState(t("all")) 
+  const [bookmarkedServices, setBookmarkedServices] = useState<BookmarkedService[]>([])
 
-  const categories = ['All', 'Cleaning', 'Repairing', 'Painting'];
+  const [isAlertVisible, setIsAlertVisible] = useState(false)
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertButtons, setAlertButtons] = useState<any[]>([])
+
+  const loadBookmarks = useCallback(async () => {
+    try {
+      const savedBookmarks = await AsyncStorage.getItem("bookmarkedServices")
+      if (savedBookmarks) {
+        const parsedBookmarks: BookmarkedService[] = JSON.parse(savedBookmarks)
+        setBookmarkedServices(parsedBookmarks)
+      }
+    } catch (error) {
+      console.error("Failed to load bookmarks from storage", error)
+    }
+  }, [])
+
+  const saveBookmarks = useCallback(async (bookmarks: BookmarkedService[]) => {
+    try {
+      await AsyncStorage.setItem("bookmarkedServices", JSON.stringify(bookmarks))
+    } catch (error) {
+      console.error("Failed to save bookmarks to storage", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    const loadLocale = async () => {
+      try {
+        const savedLocale = await AsyncStorage.getItem("appLocale")
+        if (savedLocale && (savedLocale === "en" || savedLocale === "az" || savedLocale === "ru")) {
+          setLocale(savedLocale)
+          await i18n.changeLanguage(savedLocale) 
+        }
+      } catch (error) {
+        console.error("Failed to load locale from storage", error)
+      }
+    }
+    if (isFocused) {
+      loadLocale()
+      loadBookmarks()
+    }
+  }, [isFocused, loadBookmarks, i18n])
+
+  useEffect(() => {
+    const currentCategories = [t("all"), ...new Set(bookmarkedServices.map((service) => service.category))]
+    if (!currentCategories.includes(activeTab)) {
+      setActiveTab(t("all"))
+    }
+  }, [bookmarkedServices, activeTab, t]) 
+  const categories = [t("all"), ...new Set(bookmarkedServices.map((service) => service.category))]
 
   const getFilteredServices = () => {
-    if (activeTab === 'All') {
-      return bookmarkedServices;
+    if (activeTab === t("all")) {
+      return bookmarkedServices
     }
-    return bookmarkedServices.filter(service => service.category === activeTab);
-  };
+    return bookmarkedServices.filter((service) => service.category === activeTab)
+  }
 
   const handleRemoveBookmark = (serviceId: string, serviceName: string) => {
-    Alert.alert(
-      'Remove from Bookmark?',
-      `Are you sure you want to remove "${serviceName}" from your bookmarks?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    setAlertTitle(t("removeBookmarkTitle"))
+    setAlertMessage(`${t("removeBookmarkMessage")} "${serviceName}" ${t("fromBookmarks")}?`)
+    setAlertButtons([
+      {
+        text: t("cancel"),
+        style: "cancel",
+        onPress: () => setIsAlertVisible(false), 
+      },
+      {
+        text: t("yesRemove"),
+        style: "destructive",
+        onPress: async () => {
+          const updatedBookmarks = bookmarkedServices.filter((service) => service.id !== serviceId)
+          setBookmarkedServices(updatedBookmarks)
+          await saveBookmarks(updatedBookmarks)
+          setIsAlertVisible(false) 
         },
-        {
-          text: 'Yes, Remove',
-          style: 'destructive',
-          onPress: () => {
-            setBookmarkedServices(prev => prev.filter(service => service.id !== serviceId));
-          },
-        },
-      ]
-    );
-  };
+      },
+    ])
+    setIsAlertVisible(true)
+  }
 
   const renderServiceItem = (item: BookmarkedService) => (
     <TouchableOpacity key={item.id} style={styles.serviceItem}>
@@ -98,221 +109,225 @@ const Bookmark = ({ navigation }: any) => {
       <View style={styles.serviceInfo}>
         <Text style={styles.providerName}>{item.providerName}</Text>
         <Text style={styles.serviceName}>{item.serviceName}</Text>
-        <Text style={styles.servicePrice}>${item.price}</Text>
+        <Text style={styles.servicePrice}>
+          {item.price.toFixed(2)} {t("currency")}
+        </Text>
         <View style={styles.ratingContainer}>
-          <Icon name="star" size={16} color="#FFD700" />
+          <Icon name="star" size={responsiveFontSize(16)} color="#FFD700" />
           <Text style={styles.rating}>{item.rating}</Text>
-          <Text style={styles.reviews}>| {item.reviews.toLocaleString()} reviews</Text>
+          <Text style={styles.reviews}>
+            ({item.reviews.toLocaleString()} {t("reviews")})
+          </Text>
         </View>
       </View>
-      <TouchableOpacity 
-        style={styles.bookmarkButton}
-        onPress={() => handleRemoveBookmark(item.id, item.serviceName)}
-      >
-        <Icon name="bookmark" size={20} color="#8B5CF6" />
+      <TouchableOpacity style={styles.bookmarkButton} onPress={() => handleRemoveBookmark(item.id, item.serviceName)}>
+        <Icon name="bookmark" size={responsiveFontSize(20)} color="#8B5CF6" />
       </TouchableOpacity>
     </TouchableOpacity>
-  );
+  )
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Bookmark</Text>
-        <TouchableOpacity style={styles.moreButton}>
-          <Icon name="ellipsis-horizontal" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("myBookmark")}</Text>
+        <View></View>
+        {/* <TouchableOpacity style={styles.moreButton}>
+          <Icon name="ellipsis-horizontal" size={responsiveFontSize(24)} color="#FFFFFF" />
+        </TouchableOpacity> */}
       </View>
-
-      <View style={styles.tabsContainer}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.tab,
-              activeTab === category && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab(category)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === category && styles.activeTabText,
-              ]}
-            >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[styles.tab, activeTab === category && styles.activeTab]}
+              onPress={() => setActiveTab(category)}
+            >
+              <Text style={[styles.tabText, activeTab === category && styles.activeTabText]}>{category}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         <View style={styles.servicesList}>
           {getFilteredServices().length > 0 ? (
             getFilteredServices().map(renderServiceItem)
           ) : (
             <View style={styles.emptyState}>
-              <Icon name="bookmark-outline" size={80} color="rgba(255, 255, 255, 0.3)" />
-              <Text style={styles.emptyStateText}>No bookmarked services</Text>
-              <Text style={styles.emptyStateSubtext}>
-                Services you bookmark will appear here
-              </Text>
+              <Icon name="bookmark-outline" size={responsiveFontSize(80)} color="rgba(255, 255, 255, 0.3)" />
+              <Text style={styles.emptyStateText}>{t("noBookmarkedServices")}</Text>
+              <Text style={styles.emptyStateSubtext}>{t("servicesAppearHere")}</Text>
             </View>
           )}
         </View>
       </ScrollView>
+
+      <CustomAlert
+        isVisible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        buttons={alertButtons}
+        onClose={() => setIsAlertVisible(false)} 
+      />
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: responsiveFontSize(24),
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   moreButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    flexDirection: "row",
+    paddingHorizontal: responsiveWidth(5),
+    marginBottom: responsiveHeight(2.5),
+    alignItems: "center", 
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveHeight(1),
+    borderRadius: responsiveFontSize(20),
+    marginRight: responsiveWidth(3),
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.5)',
+    borderColor: "rgba(139, 92, 246, 0.5)",
   },
   activeTab: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
+    borderColor: "#8B5CF6",
   },
   tabText: {
-    fontSize: 14,
-    color: 'rgba(139, 92, 246, 0.8)',
-    fontWeight: '500',
+    fontSize: responsiveFontSize(14),
+    color: "rgba(139, 92, 246, 0.8)",
+    fontWeight: "500",
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
   },
   servicesList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingBottom: responsiveHeight(5),
   },
   serviceItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: responsiveFontSize(16),
+    padding: responsiveWidth(4),
+    marginBottom: responsiveHeight(2),
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: responsiveHeight(0.5) },
+    shadowOpacity: 0.3,
+    shadowRadius: responsiveFontSize(5),
+    elevation: 8,
   },
   serviceImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    width: responsiveFontSize(80),
+    height: responsiveFontSize(80),
+    borderRadius: responsiveFontSize(16),
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: responsiveWidth(4),
+    overflow: "hidden",
   },
   providerImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: responsiveFontSize(60),
+    height: responsiveFontSize(60),
+    borderRadius: responsiveFontSize(12),
   },
   serviceInfo: {
     flex: 1,
   },
   providerName: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 4,
+    fontSize: responsiveFontSize(14),
+    color: "rgba(255, 255, 255, 0.6)",
+    marginBottom: responsiveHeight(0.5),
   },
   serviceName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: responsiveFontSize(18),
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: responsiveHeight(0.5),
   },
   servicePrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8B5CF6',
-    marginBottom: 8,
+    fontSize: responsiveFontSize(18),
+    fontWeight: "bold",
+    color: "#8B5CF6",
+    marginBottom: responsiveHeight(1),
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   rating: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 4,
-    marginRight: 4,
+    fontSize: responsiveFontSize(14),
+    color: "#FFFFFF",
+    fontWeight: "600",
+    marginLeft: responsiveWidth(1),
+    marginRight: responsiveWidth(1),
   },
   reviews: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: responsiveFontSize(14),
+    color: "rgba(255, 255, 255, 0.6)",
   },
   bookmarkButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
+    backgroundColor: "rgba(139, 92, 246, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: responsiveHeight(10),
   },
   emptyStateText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginTop: 20,
-    marginBottom: 8,
+    fontSize: responsiveFontSize(20),
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginTop: responsiveHeight(2.5),
+    marginBottom: responsiveHeight(1),
   },
   emptyStateSubtext: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
+    fontSize: responsiveFontSize(16),
+    color: "rgba(255, 255, 255, 0.6)",
+    textAlign: "center",
   },
-});
+})
 
-export default Bookmark;
+export default Bookmark

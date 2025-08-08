@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+"use client"
+import React, { useState } from "react"
 import {
   View,
   Text,
@@ -7,50 +8,76 @@ import {
   SafeAreaView,
   TextInput,
   Alert,
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import { SignUpProps } from '../../Types/navigation';
+  Dimensions, // Import Dimensions for responsive sizing
+  ScrollView, // Import ScrollView for scrollable content
+} from "react-native"
+import LinearGradient from "react-native-linear-gradient"
+import Icon from "react-native-vector-icons/Ionicons" // For general icons
+import FontAwesome from "react-native-vector-icons/FontAwesome" // For social icons
+import type { SignUpProps } from "../../Types/navigation"
+import CustomAlert from "../../Components/CustomAlert"
+
+// Responsive sizing utilities
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (screenWidth * percentage) / 100
+const responsiveHeight = (percentage: number) => (screenHeight * percentage) / 100
+const responsiveFontSize = (size: number) => size * (screenWidth / 375)
 
 const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // State for CustomAlert
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertButtons, setAlertButtons] = useState<any[]>([])
 
   const handleSignUp = () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+      Alert.alert("Error", "Please fill in all fields")
+      return
     }
-    
+
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
+      Alert.alert("Error", "Passwords do not match")
+      return
     }
-    
-    console.log('Sign Up:', { email, password, rememberMe });
-    navigation.navigate('FillProfile'); 
-  };
+
+    console.log("Sign Up:", { email, password, rememberMe })
+    navigation.navigate("FillProfile")
+  }
 
   const handleSocialSignUp = (provider: string) => {
-    console.log(`Sign up with ${provider}`);
-  };
+    setAlertTitle("Coming Soon")
+    setAlertMessage("yaxinda :)")
+    setAlertButtons([
+      {
+        text: "OK",
+        onPress: () => setShowAlert(false),
+      },
+    ])
+    setShowAlert(true)
+    console.log(`Sign up with ${provider}`)
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
         {/* Back Button */}
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* Title */}
-        <Text style={styles.title}>Create your{'\n'}Account</Text>
+        <Text style={styles.title}>
+          Create your{"\n"}
+          Account
+        </Text>
 
         {/* Email Input */}
         <View style={styles.inputContainer}>
@@ -66,6 +93,7 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
           />
         </View>
 
+        {/* Password Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.passwordContainer}>
@@ -77,15 +105,13 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
               placeholderTextColor="rgba(255, 255, 255, 0.5)"
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+            <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+              <Icon name={showPassword ? "eye-outline" : "eye-off-outline"} size={responsiveFontSize(20)} color="rgba(255, 255, 255, 0.6)" />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Confirm Password Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Confirm Password</Text>
           <View style={styles.passwordContainer}>
@@ -97,240 +123,233 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
               placeholderTextColor="rgba(255, 255, 255, 0.5)"
               secureTextEntry={!showConfirmPassword}
             />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
+            <TouchableOpacity style={styles.eyeButton} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <Icon name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} size={responsiveFontSize(20)} color="rgba(255, 255, 255, 0.6)" />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Remember Me Checkbox */}
         <View style={styles.rememberContainer}>
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => setRememberMe(!rememberMe)}
-          >
+          <TouchableOpacity style={styles.checkboxContainer} onPress={() => setRememberMe(!rememberMe)}>
             <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+              {rememberMe && <Icon name="checkmark" size={responsiveFontSize(14)} color="#FFFFFF" />}
             </View>
             <Text style={styles.rememberText}>Remember me</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.signUpButtonContainer}
-          onPress={handleSignUp}
-        >
-          <LinearGradient
-            colors={['#8B5CF6', '#A855F7']}
-            style={styles.signUpButton}
-          >
+        {/* Sign Up Button */}
+        <TouchableOpacity style={styles.signUpButtonContainer} onPress={handleSignUp}>
+          <LinearGradient colors={["#8B5CF6", "#A855F7"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.signUpButton}>
             <Text style={styles.signUpButtonText}>Sign up</Text>
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Divider */}
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>or continue with</Text>
           <View style={styles.dividerLine} />
         </View>
 
+        {/* Social Sign Up Buttons */}
         <View style={styles.socialContainer}>
-          <TouchableOpacity 
-            style={styles.socialButton}
-            onPress={() => handleSocialSignUp('Facebook')}
-          >
-            <Text style={styles.socialIcon}>f</Text>
+          <TouchableOpacity style={styles.socialButton} onPress={() => handleSocialSignUp("Facebook")}>
+            <FontAwesome name="facebook" size={responsiveFontSize(24)} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.socialButton}
-            onPress={() => handleSocialSignUp('Google')}
-          >
-            <Text style={styles.socialIcon}>G</Text>
+          <TouchableOpacity style={styles.socialButton} onPress={() => handleSocialSignUp("Google")}>
+            <FontAwesome name="google" size={responsiveFontSize(24)} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.socialButton}
-            onPress={() => handleSocialSignUp('Apple')}
-          >
-            <Text style={styles.socialIcon}>🍎</Text>
+          <TouchableOpacity style={styles.socialButton} onPress={() => handleSocialSignUp("Apple")}>
+            <Icon name="logo-apple" size={responsiveFontSize(24)} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.signInContainer}>
           <Text style={styles.signInText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
             <Text style={styles.signInLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
+
+      <CustomAlert
+        isVisible={showAlert}
+        title={alertTitle}
+        message={alertMessage}
+        buttons={alertButtons}
+        onClose={() => setShowAlert(false)}
+      />
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    marginTop: 40,
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(5),
+    paddingBottom: responsiveHeight(5),
   },
   backButton: {
-    marginTop: 10,
-    marginBottom: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: 'bold',
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: responsiveHeight(3),
+    marginBottom: responsiveHeight(3),
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 30,
-    lineHeight: 40,
+    fontSize: responsiveFontSize(32),
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: responsiveHeight(4),
+    lineHeight: responsiveFontSize(40),
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: responsiveHeight(2.5),
   },
   inputLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(16),
+    marginBottom: responsiveHeight(1),
+    fontWeight: "500",
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    color: '#FFFFFF',
-    fontSize: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: responsiveFontSize(12),
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(2),
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(16),
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: responsiveFontSize(12),
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   passwordInput: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    color: '#FFFFFF',
-    fontSize: 16,
+    paddingHorizontal: responsiveWidth(4),
+    paddingVertical: responsiveHeight(2),
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(16),
   },
   eyeButton: {
-    paddingHorizontal: 16,
-  },
-  eyeIcon: {
-    fontSize: 20,
+    paddingHorizontal: responsiveWidth(4),
   },
   rememberContainer: {
-    marginBottom: 30,
+    marginBottom: responsiveHeight(3.5),
   },
   checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: responsiveFontSize(20),
+    height: responsiveFontSize(20),
+    borderRadius: responsiveFontSize(4),
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    marginRight: responsiveWidth(3),
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxChecked: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
+    borderColor: "#8B5CF6",
   },
   checkmark: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(12),
+    fontWeight: "bold",
   },
   rememberText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(16),
   },
   signUpButtonContainer: {
-    marginBottom: 30,
+    marginBottom: responsiveHeight(3.5),
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: responsiveHeight(0.6) },
+    shadowOpacity: 0.4,
+    shadowRadius: responsiveFontSize(8),
+    elevation: 10,
   },
   signUpButton: {
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: responsiveHeight(7),
+    borderRadius: responsiveFontSize(28),
+    justifyContent: "center",
+    alignItems: "center",
   },
   signUpButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontSize: responsiveFontSize(18),
+    fontWeight: "600",
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: responsiveHeight(2.5),
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   dividerText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginHorizontal: 16,
-    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+    marginHorizontal: responsiveWidth(4),
+    fontSize: responsiveFontSize(14),
   },
   socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 30,
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: responsiveHeight(3.5),
   },
   socialButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: responsiveFontSize(60),
+    height: responsiveFontSize(60),
+    borderRadius: responsiveFontSize(16),
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  socialIcon: {
-    fontSize: 24,
-    color: '#FFFFFF',
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: responsiveWidth(2.5),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: responsiveHeight(0.3) },
+    shadowOpacity: 0.2,
+    shadowRadius: responsiveFontSize(4),
+    elevation: 5,
   },
   signInContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: responsiveHeight(2),
   },
   signInText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: responsiveFontSize(16),
   },
   signInLink: {
-    color: '#8B5CF6',
-    fontSize: 16,
-    fontWeight: '600',
+    color: "#8B5CF6",
+    fontSize: responsiveFontSize(16),
+    fontWeight: "600",
   },
-});
+})
 
-export default SignUp;
+export default SignUp

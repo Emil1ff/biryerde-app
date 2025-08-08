@@ -1,47 +1,82 @@
 "use client"
-
 import type React from "react"
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useNavigation } from "@react-navigation/native"
+
+import enTranslations from "../../../Assets/lang/en.json"
+import azTranslations from "../../../Assets/lang/az.json"
+import ruTranslations from "../../../Assets/lang/ru.json"
+
+const { width, height } = Dimensions.get("window")
+const responsiveWidth = (percentage: number) => (width * percentage) / 100
+const responsiveHeight = (percentage: number) => (height * percentage) / 100
+const responsiveFontSize = (size: number) => size * (width / 375)
+
+const allTranslations = {
+  en: enTranslations,
+  az: azTranslations,
+  ru: ruTranslations,
+}
 
 interface LanguageOption {
   id: string
   name: string
+  localeKey: "en" | "az" | "ru"
   isSuggested?: boolean
 }
 
 const Language: React.FC<any> = ({ navigation }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState("English (US)")
+  const [selectedLanguageKey, setSelectedLanguageKey] = useState<"en" | "az" | "ru">("en")
+  const nav = useNavigation()
+
+  const t = (key: keyof typeof enTranslations) => {
+    return allTranslations[selectedLanguageKey][key] || key
+  }
+
+  useEffect(() => {
+    const loadLocale = async () => {
+      try {
+        const savedLocale = await AsyncStorage.getItem("appLocale")
+        if (savedLocale && (savedLocale === "en" || savedLocale === "az" || savedLocale === "ru")) {
+          setSelectedLanguageKey(savedLocale)
+        }
+      } catch (error) {
+        console.error("Failed to load locale from storage", error)
+      }
+    }
+    loadLocale()
+  }, [])
+
+  const handleLanguageSelect = async (localeKey: "en" | "az" | "ru") => {
+    setSelectedLanguageKey(localeKey)
+    try {
+      await AsyncStorage.setItem("appLocale", localeKey)
+    } catch (error) {
+      console.error("Failed to save locale to storage", error)
+    }
+  }
 
   const suggestedLanguages: LanguageOption[] = [
-    { id: "1", name: "English (US)", isSuggested: true },
-    { id: "2", name: "English (UK)", isSuggested: true },
-  ]
-
-  const otherLanguages: LanguageOption[] = [
-    { id: "3", name: "Mandarin" },
-    { id: "4", name: "Hindi" },
-    { id: "5", name: "Spanish" },
-    { id: "6", name: "French" },
-    { id: "7", name: "Arabic" },
-    { id: "8", name: "Bengali" },
-    { id: "9", name: "Russian" },
-    { id: "10", name: "Indonesian" },
+    { id: "1", name: t("englishUS"), localeKey: "en", isSuggested: true },
+    { id: "2", name: t("azerbaijan"), localeKey: "az", isSuggested: true },
+    { id: "3", name: t("russian"), localeKey: "ru", isSuggested: true },
   ]
 
   const renderLanguageOption = (lang: LanguageOption) => (
     <TouchableOpacity
       key={lang.id}
       style={styles.languageItem}
-      onPress={() => setSelectedLanguage(lang.name)}
+      onPress={() => handleLanguageSelect(lang.localeKey)}
       activeOpacity={0.7}
     >
       <Text style={styles.languageName}>{lang.name}</Text>
-      {selectedLanguage === lang.name ? (
-        <Icon name="radio-button-on" size={24} color="#8B5CF6" />
+      {selectedLanguageKey === lang.localeKey ? (
+        <Icon name="radio-button-on" size={responsiveFontSize(24)} color="#8B5CF6" />
       ) : (
-        <Icon name="radio-button-off" size={24} color="rgba(255, 255, 255, 0.4)" />
+        <Icon name="radio-button-off" size={responsiveFontSize(24)} color="rgba(255, 255, 255, 0.4)" />
       )}
     </TouchableOpacity>
   )
@@ -49,22 +84,16 @@ const Language: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+        <TouchableOpacity onPress={() => nav.goBack()} style={styles.backButton}>
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Language</Text>
+        <Text style={styles.headerTitle}>{t("language")}</Text>
         <View style={styles.placeholder} />
       </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Suggested</Text>
+          <Text style={styles.sectionTitle}>{t("selectLanguage")}</Text>
           <View style={styles.optionsContainer}>{suggestedLanguages.map(renderLanguageOption)}</View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Language</Text>
-          <View style={styles.optionsContainer}>{otherLanguages.map(renderLanguageOption)}</View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -80,54 +109,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: responsiveWidth(5),
+    paddingTop: responsiveHeight(7),
+    paddingBottom: responsiveHeight(2.5),
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveFontSize(40),
+    height: responsiveFontSize(40),
+    borderRadius: responsiveFontSize(20),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24),
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   placeholder: {
-    width: 40,
+    width: responsiveFontSize(40),
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: responsiveWidth(5),
   },
   section: {
-    marginBottom: 30,
+    marginBottom: responsiveHeight(3),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: "bold",
     color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 16,
+    marginBottom: responsiveHeight(2),
   },
   optionsContainer: {
-    marginTop: 10,
+    marginTop: responsiveHeight(1),
   },
   languageItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#1A1A1A",
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    borderRadius: responsiveFontSize(10),
+    paddingVertical: responsiveHeight(1.8),
+    paddingHorizontal: responsiveWidth(4),
+    marginBottom: responsiveHeight(1.5),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   languageName: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "600",
     color: "#E0E0E0",
   },
