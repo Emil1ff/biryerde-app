@@ -56,9 +56,8 @@ const Inbox = forwardRef<InboxRef, InboxPropsWithScroll>(({ onScroll }, ref) => 
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"chats" | "calls">("chats")
 
-  const flatListRef = useRef<FlatList<Message | Call>>(null) // Ref for the FlatList
+  const flatListRef = useRef<FlatList<Message | Call>>(null) 
 
-  // Expose scrollToTop method via useImperativeHandle
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
@@ -250,11 +249,11 @@ const Inbox = forwardRef<InboxRef, InboxPropsWithScroll>(({ onScroll }, ref) => 
   const getCallIcon = (type: Call["type"]) => {
     switch (type) {
       case "incoming":
-        return <Icon name="call-outline" size={responsiveFontSize(16)} color="#10B981" /> // Green for incoming
+        return <Icon name="call-outline" size={responsiveFontSize(16)} color="#10B981" /> 
       case "outgoing":
-        return <Icon name="call-made-outline" size={responsiveFontSize(16)} color="#8B5CF6" /> // Purple for outgoing
+        return <Icon name="call-made-outline" size={responsiveFontSize(16)} color="#8B5CF6" /> 
       case "missed":
-        return <Icon name="call-missed-outline" size={responsiveFontSize(16)} color="#EF4444" /> // Red for missed
+        return <Icon name="call-missed-outline" size={responsiveFontSize(16)} color="#EF4444" />
       default:
         return null
     }
@@ -469,7 +468,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: responsiveWidth(5),
-    paddingBottom: responsiveHeight(12), // Adjusted for tab bar height
+    paddingBottom: responsiveHeight(12), 
   },
   messageItem: {
     flexDirection: "row",

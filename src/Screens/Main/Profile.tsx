@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef, forwardRef, useImperativeHandle } from "react" // Added useEffect
+import { useState, useRef, forwardRef, useImperativeHandle } from "react" 
 import {
   View,
   Text,
@@ -9,17 +9,16 @@ import {
   Image,
   Switch,
   Animated,
-  type ScrollView, // Explicitly import ScrollView
-  Dimensions, // Import Dimensions for responsive sizing
+  type ScrollView, 
+  Dimensions, 
 } from "react-native"
 import LinearGradient from "react-native-linear-gradient"
 import Icon from "react-native-vector-icons/Ionicons"
 import { useNavigation } from "@react-navigation/native"
 import { useTranslation } from "react-i18next"
-import type { StackNavigationProp } from "@react-navigation/native-stack"
 import CustomAlert from "../../Components/CustomAlert"
+import { StackNavigationProp } from "@react-navigation/stack"
 
-// Responsive sizing utilities
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
 const responsiveWidth = (percentage: number) => (screenWidth * percentage) / 100
 const responsiveHeight = (percentage: number) => (screenHeight * percentage) / 100
@@ -63,15 +62,14 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
   const { t, i18n } = useTranslation()
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>()
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [darkModeEnabled, setDarkModeEnabled] = useState(true) // Keep this state for the switch visual
-  const [showAlert, setShowAlert] = useState(false) // Generic alert visibility
+  const [darkModeEnabled, setDarkModeEnabled] = useState(true) 
+  const [showAlert, setShowAlert] = useState(false) 
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
   const [alertButtons, setAlertButtons] = useState<any[]>([])
 
-  const scrollViewRef = useRef<ScrollView>(null) // Internal ref for ScrollView
+  const scrollViewRef = useRef<ScrollView>(null) 
 
-  // Expose scrollToTop method via useImperativeHandle
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true })
@@ -116,7 +114,6 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
   }
 
   const handleDarkModeToggle = () => {
-    // For now, just show the alert. Do not change darkModeEnabled state.
     setAlertTitle(t("comingSoonTitle"))
     setAlertMessage(t("comingSoonMessage"))
     setAlertButtons([
@@ -128,7 +125,6 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
     setShowAlert(true)
   }
 
-  // Function to get the display name of the current language
   const getCurrentLanguageDisplayName = () => {
     switch (i18n.language) {
       case "en":
@@ -138,7 +134,7 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
       case "ru":
         return t("language_ru_display")
       default:
-        return t("language_en_display") // Fallback
+        return t("language_en_display") 
     }
   }
 
@@ -177,7 +173,7 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
       title: t("language"),
       icon: "language-outline",
       type: "navigation",
-      rightText: getCurrentLanguageDisplayName(), // Dynamically set based on current language
+      rightText: getCurrentLanguageDisplayName(), 
       onPress: () => navigation.navigate("Language"),
     },
     {
@@ -185,8 +181,8 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
       title: t("darkMode"),
       icon: "eye-outline",
       type: "switch",
-      value: darkModeEnabled, // Still use this for the visual state of the switch
-      onPress: handleDarkModeToggle, // Call the new handler
+      value: darkModeEnabled, 
+      onPress: handleDarkModeToggle, 
     },
     {
       id: "7",
@@ -261,12 +257,12 @@ const Profile = forwardRef<ProfileRef, ProfilePropsWithScroll>(({ onScroll }, re
   return (
     <SafeAreaView style={styles.container}>
       <Animated.ScrollView
-        ref={scrollViewRef} // Assign internal ref
+        ref={scrollViewRef} 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: responsiveHeight(12) }} // Adjusted for tab bar height
+        contentContainerStyle={{ paddingBottom: responsiveHeight(12) }} 
       >
         <View style={styles.header}>
           <Text style={styles.title}>{t("profileTitle")}</Text>
@@ -547,7 +543,7 @@ const styles = StyleSheet.create({
   },
   appVersion: {
     alignItems: "center",
-    paddingBottom: responsiveHeight(12), // Adjusted for tab bar height
+    paddingBottom: responsiveHeight(12), 
     marginTop: responsiveHeight(2.5),
   },
   versionText: {

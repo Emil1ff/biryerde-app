@@ -1,3 +1,5 @@
+"use client"
+
 import React from "react"
 import {
   View,
@@ -14,17 +16,22 @@ import LinearGradient from "react-native-linear-gradient"
 import { useFocusEffect } from "@react-navigation/native"
 import { GoogleSignin } from "@react-native-google-signin/google-signin"
 import { LoginManager, AccessToken } from "react-native-fbsdk-next"
-import { AuthScreenProps } from "../../Types/navigation"
-import { Icon } from "lucide-react-native"
+import type { AuthScreenProps } from "../../Types/navigation"
+import { Facebook, Mail } from "lucide-react-native"
 
 const { width, height } = Dimensions.get("window")
+
+const isTablet = width >= 768
+const getResponsiveSize = (phoneSize: number, tabletSize?: number) => {
+  return isTablet ? tabletSize || phoneSize * 0.7 : phoneSize
+}
 
 const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
   const { fromOnboarding } = route.params || {}
 
   React.useEffect(() => {
     GoogleSignin.configure({
-      webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com", 
+      webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
     })
   }, [])
 
@@ -58,9 +65,9 @@ const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
         const data = await AccessToken.getCurrentAccessToken()
         if (!data) throw new Error("Failed to get access token")
         console.log("Facebook access token:", data.accessToken.toString())
-        
+
         Alert.alert("Success", "Logged in with Facebook!")
-        navigation.navigate("Main") 
+        navigation.navigate("Main")
       }
     } catch (error) {
       console.error("Facebook login error:", error)
@@ -73,27 +80,14 @@ const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
       await GoogleSignin.hasPlayServices()
       const userInfo = await GoogleSignin.signIn()
       console.log("Google user info:", userInfo)
-      
+
       Alert.alert("Success", "Logged in with Google!")
-      navigation.navigate("Main") 
+      navigation.navigate("Main")
     } catch (error) {
       console.error("Google login error:", error)
       Alert.alert("Login Error", "Failed to log in with Google. Please try again.")
     }
   }
-
-  // Apple Login (kept commented out as per original)
-  // const handleAppleLogin = async () => {
-  //   try {
-  //     const appleAuthRequestResponse = await appleAuth.performRequest({
-  //       requestedOperation: AppleAuthRequestOperation.LOGIN,
-  //       requestedScopes: [AppleAuthRequestScope.EMAIL, AppleAuthRequestScope.FULL_NAME],
-  //     });
-  //     console.log('Apple auth response:', appleAuthRequestResponse);
-  //   } catch (error) {
-  //     console.error('Apple login error:', error);
-  //   }
-  // };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,31 +96,40 @@ const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
           <View style={styles.illustrationContainer}>
             <Image source={require("../../Assets/images/auth/auth.png")} style={styles.image} resizeMode="contain" />
           </View>
-          <Text style={styles.title}>Let's you in</Text>
+
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Let's you in</Text>
+            <Text style={styles.subtitle}>Choose your preferred sign in method</Text>
+          </View>
+
           <View style={styles.socialButtonsContainer}>
             <TouchableOpacity style={styles.socialButton} onPress={handleFacebookLogin}>
-               {/* <Icon name="facebook" size={width * 0.05} color="#3b5998" style={styles.socialIcon} />  */}
+              <View style={styles.iconContainer}>
+                <Facebook size={getResponsiveSize(20, 24)} color="#1877F2" />
+              </View>
               <Text style={styles.socialButtonText}>Continue with Facebook</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
-              {/* <Icon name="google" size={width * 0.05} color="#db4437" style={styles.socialIcon} /> */}
+              <View style={styles.iconContainer}>
+                <Mail size={getResponsiveSize(20, 24)} color="#EA4335" />
+              </View>
               <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
-            {/* <TouchableOpacity style={styles.socialButton} onPress={handleAppleLogin}>
-              <AppleIcon name="logo-apple" size={width * 0.05} color="#000000" style={styles.socialIcon} />
-              <Text style={styles.socialButtonText}>Continue with Apple</Text>
-            </TouchableOpacity> */}
           </View>
+
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
+
           <TouchableOpacity style={styles.passwordButtonContainer} onPress={handleSignInWithPassword}>
             <LinearGradient colors={["#8B5CF6", "#A855F7"]} style={styles.passwordButton}>
               <Text style={styles.passwordButtonText}>Sign in with password</Text>
             </LinearGradient>
           </TouchableOpacity>
+
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
             <TouchableOpacity onPress={handleSignUp}>
@@ -142,54 +145,76 @@ const Auth: React.FC<AuthScreenProps> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000", 
+    backgroundColor: "#000000",
   },
   scrollViewContent: {
-    flexGrow: 1, 
-    justifyContent: "center", 
+    flexGrow: 1,
+    justifyContent: "center",
   },
   content: {
     flex: 1,
-    paddingHorizontal: width * 0.05, 
+    paddingHorizontal: getResponsiveSize(width * 0.05, 40),
+    maxWidth: isTablet ? 500 : width,
+    alignSelf: "center",
+    width: "100%",
   },
   illustrationContainer: {
     alignItems: "center",
-    marginVertical: height * 0.04,
+    marginVertical: getResponsiveSize(height * 0.04, 40),
   },
   image: {
-    width: width * 0.7, 
-    height: height * 0.3, 
-    marginBottom: height * 0.03, 
+    width: getResponsiveSize(width * 0.7, 300),
+    height: getResponsiveSize(height * 0.3, 200),
+    marginBottom: getResponsiveSize(height * 0.03, 20),
+  },
+  titleContainer: {
+    alignItems: "center",
+    marginBottom: getResponsiveSize(height * 0.05, 40),
   },
   title: {
-    fontSize: width * 0.08, 
+    fontSize: getResponsiveSize(width * 0.08, 32),
     fontWeight: "bold",
     color: "#FFFFFF",
     textAlign: "center",
-    marginBottom: height * 0.05, 
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: getResponsiveSize(width * 0.035, 16),
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
+    fontWeight: "400",
   },
   socialButtonsContainer: {
-    marginBottom: height * 0.035, 
+    marginBottom: getResponsiveSize(height * 0.035, 30),
   },
   socialButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 16,
-    paddingVertical: height * 0.02, 
-    paddingHorizontal: width * 0.05, 
-    marginBottom: height * 0.02, 
+    paddingVertical: getResponsiveSize(height * 0.02, 16),
+    paddingHorizontal: getResponsiveSize(width * 0.05, 20),
+    marginBottom: getResponsiveSize(height * 0.015, 12),
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  socialIcon: {
-    marginRight: width * 0.04, 
-    width: width * 0.06, 
-    textAlign: "center",
+  iconContainer: {
+    width: getResponsiveSize(32, 40),
+    height: getResponsiveSize(32, 40),
+    borderRadius: getResponsiveSize(16, 20),
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: getResponsiveSize(width * 0.04, 16),
   },
   socialButtonText: {
     color: "#FFFFFF",
-    fontSize: width * 0.04, 
+    fontSize: getResponsiveSize(width * 0.04, 16),
     fontWeight: "500",
     flex: 1,
     textAlign: "center",
@@ -197,7 +222,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: height * 0.035, 
+    marginVertical: getResponsiveSize(height * 0.035, 30),
   },
   dividerLine: {
     flex: 1,
@@ -206,50 +231,44 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     color: "rgba(255, 255, 255, 0.6)",
-    marginHorizontal: width * 0.04, 
-    fontSize: width * 0.035, 
+    marginHorizontal: getResponsiveSize(width * 0.04, 16),
+    fontSize: getResponsiveSize(width * 0.035, 14),
+    fontWeight: "500",
   },
   passwordButtonContainer: {
-    marginBottom: height * 0.035, 
+    marginBottom: getResponsiveSize(height * 0.035, 30),
   },
   passwordButton: {
-    height: height * 0.07, 
+    height: getResponsiveSize(height * 0.07, 56),
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   passwordButtonText: {
     color: "#FFFFFF",
-    fontSize: width * 0.045, 
+    fontSize: getResponsiveSize(width * 0.045, 18),
     fontWeight: "600",
   },
   signUpContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: height * 0.02, 
+    marginBottom: getResponsiveSize(height * 0.02, 20),
   },
   signUpText: {
     color: "rgba(255, 255, 255, 0.6)",
-    fontSize: width * 0.04, 
+    fontSize: getResponsiveSize(width * 0.04, 16),
   },
   signUpLink: {
     color: "#8B5CF6",
-    fontSize: width * 0.04, 
+    fontSize: getResponsiveSize(width * 0.04, 16),
     fontWeight: "600",
   },
 })
 
 export default Auth
-
-
-// import React from 'react'
-// import { Text, View } from 'react-native'
-
-// const Auth = () => {
-//   return (
-//     <View><Text>asdfasd</Text></View>
-//   )
-// }
-
-// export default Auth

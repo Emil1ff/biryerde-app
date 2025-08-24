@@ -579,8 +579,8 @@ const Home = forwardRef<HomeRef, HomeProps>(({ onScroll }, ref) => {
               style={styles.profileImage}
             />
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Knyaz</Text>
-              <Text style={styles.userName}>Qasan</Text>
+              <Text style={styles.greeting}>Emil</Text>
+              <Text style={styles.userName}>Hesenov</Text>
             </View>
           </View>
           <View style={styles.headerActions}>
@@ -782,18 +782,18 @@ const styles = StyleSheet.create({
   },
   greetingContainer: {
     flex: 1,
-    // justifyContent: 'center',
-    alignItems:"center",
+    // justifyContent: 'center',.
+    // alignItems:"center",
     gap:5,
     flexDirection:"row"
   },
   greeting: {
-    fontSize: responsiveFontSize(20),
+    fontSize: responsiveFontSize(17),
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: responsiveHeight(0.2),
   },
   userName: {
-    fontSize: responsiveFontSize(20),
+    fontSize: responsiveFontSize(17),
     fontWeight: 'bold',
     color: '#FFFFFF',
   },

@@ -1,3 +1,5 @@
+//login.tsx
+
 "use client"
 
 import type React from "react"
@@ -91,7 +93,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <View style={styles.scrollViewContent}>
         <View style={styles.content}>
           <Pressable
             onPressIn={() => animatePressIn(backButtonScale, 0.9)}
@@ -242,7 +244,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
             </Pressable>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       <CustomAlert isVisible={alertVisible} title={alertTitle} message={alertMessage} onClose={hideAlert} />
     </SafeAreaView>
